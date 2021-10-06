@@ -11,7 +11,7 @@ module lux {
     },
 
     updateState(state: State) {
-      const v: VNode = $vdom._createAppFn(state);
+      const v: VNode = clense($vdom._createAppFn(state), state);
       if (is.undef(v)) {
         let c = <any>dom.createComment();
         $vdom.$root?.replaceWith(c);

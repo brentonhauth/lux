@@ -1,5 +1,8 @@
 module lux {
   export const dom = {
+
+    select: (query: string) => document.querySelector(query),
+
     createElement: (tag: string): Element => document.createElement(tag),
 
     setAttr(el: Element, attr: string, value: any) {

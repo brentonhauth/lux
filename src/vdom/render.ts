@@ -1,8 +1,11 @@
 module lux {
-  export function $render(node: VNode|string): Element {
-    // console.log(`RENDER`, node);
+  export function $render(node: Renderable): Element {
     if (is.string(node)) {
       return <any>dom.createText(node);
+    } else if (is.block(node)) {
+      // TEMPORARY
+      console.warn('FOUND BLOCK IN RENDER STEP', node);
+      return <any>dom.createComment();
     }
 
     node.$el = dom.createElement(node.tag);
@@ -32,6 +35,7 @@ module lux {
       target.replaceWith(node);
       return node;
     } else if (is.undef(node.$el)) {
+      node = clense(node, {});
       node.$el = $render(node);
     }
     target.replaceWith(node.$el);

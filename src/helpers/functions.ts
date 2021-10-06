@@ -50,7 +50,7 @@ module lux {
       if (is.object(v)) {
         applyAll(el[k], v);
       } else {
-        //dom.setAttr(el, String(k), v);
+        dom.setAttr(el, String(k), v);
       }
     });
   }

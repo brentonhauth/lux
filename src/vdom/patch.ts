@@ -3,13 +3,8 @@ module lux {
 
   export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
     if (is.undef(newNode)) {
-      if (is.undef(oldNode)) {
-        return identity;
-      } else {
-        return removePatch;
-      }
+      return is.undef(oldNode) ? identity : removePatch;
     } else if (is.undef(oldNode)) {
-      // console.log('Line 73 vdom.ts');
       return $el => {
         let e = $render(newNode);
         if (is.def($el)) {
@@ -20,7 +15,6 @@ module lux {
     }
   
     if (is.string(oldNode) || is.string(newNode)) {
-      // console.log(`Compare Nodes: (oldNode !== newNode): ${oldNode !== newNode}`, oldNode, newNode);
       if (oldNode !== newNode) {
         return $el => {
           let e = $render(newNode);
@@ -41,7 +35,6 @@ module lux {
     let childrenPatch = childrenDiff(oldNode.children, newNode.children);
   
     return $el => {
-      // if (is.undef($el)) console.log(`OWO ${oldNode?.tag || oldNode}`);
       attrsPatch($el);
       childrenPatch($el);
       return $el;
@@ -73,7 +66,6 @@ module lux {
     const moreChildren: PatchFunction[] = [];
     for (let i = old.length; i < _new.length; i++) {
       moreChildren.push($parent => {
-        // console.log('inner patch add newChildren[i]', i, newChildren[i]);
         $parent.appendChild($render(newChildren[i]));
         return $parent;
       });
