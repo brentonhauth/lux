@@ -1,4 +1,5 @@
 module lux {
+  /** @deprecated */
   export const $vdom = {
     $root: <Element>null,
     $v: <VNode>null,

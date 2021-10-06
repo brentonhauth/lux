@@ -21,6 +21,18 @@ module lux {
 
   export function identity<T>(a: T): T { return a; }
 
+  export function flattenArray<T>(a: Array<ArrayOrSingle<T>>): T[] {
+    const flat: T[] = [];
+    for (let e of a) {
+      if (is.array(e)) {
+        flat.push(...(<T[]>flattenArray(<any>e)));
+      } else {
+        flat.push(e);
+      }
+    }
+    return flat;
+  }
+
   export function arrayWrap<T>(a: ArrayOrSingle<T>): T[] {
     if (is.array(a)) {
       return a;
@@ -41,12 +53,16 @@ module lux {
 
   // export function compare(object: Record<Key, any>, object: Record<Key, any>) {}
 
-  export function applyAllAttrs(node: VNode) {
-   applyAllAttrs2(node.$el, node.attrs);
-  }
-
-  export function applyAllAttrs2(el: Element, attrs: any) {
-    forIn(attrs, (k, v) => {
+  export function applyAllAttrs(node: Element|VNode, attrs?: Record<string, any>) {
+    let el: Element;
+    if (is.vnode(node)) {
+      attrs = node.attrs;
+      el = node.$el;
+    } else {
+      el = node;
+    }
+    if (is.undef(el)) return;
+    forIn((attrs || {}), (k, v) => {
       if (is.object(v)) {
         applyAll(el[k], v);
       } else {
