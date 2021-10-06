@@ -25,12 +25,16 @@ const instance = new Lux({
     let cs = [];
     for (let i = 0; i < random; i++) {
       cs.push(h('span', {
-        id: `span-x-${i}`
+        attrs: {
+          id: `span-x-${i}`
+        }
       }, String(i)));
     }
     let count = (this._state?.count || 0);
     return h('div', {
-      'data-test': count,
+      attrs: {
+        'data-test': count,
+      },
       style: {
         'background-color': `rgb(56, 255, ${Math.max(Math.min(count * 10, 255), 0)})`,
         'width': '100px',

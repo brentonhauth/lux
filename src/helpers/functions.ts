@@ -53,10 +53,10 @@ module lux {
 
   // export function compare(object: Record<Key, any>, object: Record<Key, any>) {}
 
-  export function applyAllAttrs(node: Element|VNode, attrs?: Record<string, any>) {
+  export function applyAllAttrs(node: Element|VNode, attrs?: VNodeAttrs) {
     let el: Element;
     if (is.vnode(node)) {
-      attrs = node.attrs;
+      attrs = node.data?.attrs;
       el = node.$el;
     } else {
       el = node;

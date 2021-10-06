@@ -10,21 +10,25 @@ module lux {
 
     node.$el = dom.createElement(node.tag);
     applyAllAttrs(node);
+    if (node.data?.props) {
+      applyAll(node.$el, node.data.props);
+    }
+    if (node.data?.style) {
+      applyAll((<any>node.$el).style, node.data.style);
+    }
 
     if (is.def(node.children)) {
       let children = arrayWrap(node.children);
-      if (is.array(children)) {
-        children.forEach(c => {
-          if (is.string(c)) {
-            node.$el.appendChild(dom.createText(c));
-          } else if (is.vnode(c)) {
-            c.$el = $render(c);
-            node.$el.appendChild(c.$el);
-          } else if (is.block(c)) {
-            console.warn('Does not yet support Blocks!');
-          }
-        });
-      }
+      children.forEach(c => {
+        if (is.string(c)) {
+          node.$el.appendChild(dom.createText(c));
+        } else if (is.vnode(c)) {
+          c.$el = $render(c);
+          node.$el.appendChild(c.$el);
+        } else if (is.block(c)) {
+          console.warn('Does not yet support Blocks!');
+        }
+      });
     }
 
     return node.$el;

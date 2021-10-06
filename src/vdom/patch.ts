@@ -1,5 +1,12 @@
 module lux {
-  export const removePatch: PatchFunction = $el => void $el.remove();
+  const removePatch: PatchFunction = $el => void $el.remove();
+
+  export enum PatchFlags {
+    ADDED = 1,
+    REMOVED = 2,
+    REPLACED = 4,
+    UPDATED = 8,
+  };
 
   export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
     if (is.undef(newNode)) {
@@ -31,10 +38,12 @@ module lux {
       };
     }
   
-    let attrsPatch = attrsDiff(oldNode.attrs, newNode.attrs);
+    let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
+    let attrsPatch = attrsDiff(oldNode.data?.attrs, newNode.data?.attrs);
     let childrenPatch = childrenDiff(oldNode.children, newNode.children);
   
     return $el => {
+      stylePatch((<any>$el).style||{});
       attrsPatch($el);
       childrenPatch($el);
       return $el;
@@ -82,7 +91,10 @@ module lux {
     };
   }
   
-  function attrsDiff(oldAttrs: Record<string, any>, newAttrs: Record<string, any>): PatchFunction {
+  function attrsDiff(oldAttrs: Record<string, any>, newAttrs: Record<string, any>, raw=false): PatchFunction {
+    if (is.undef(oldAttrs) && is.undef(newAttrs)) {
+      return identity;
+    }
     let apply: Record<string, any> = {};
     let remove: string[] = [];
     oldAttrs = oldAttrs || {};
@@ -103,10 +115,14 @@ module lux {
     });
 
     return $el => {
-      remove.forEach(r => $el.removeAttribute(r));
+      remove.forEach(raw ?
+        r => delete $el[r] :
+        $el.removeAttribute.bind($el));
       forIn(apply, (k, v) => {
         if (is.objectLike(v)) {
           forIn(v, (ik, iv) => $el[k][ik] = iv);
+        } else if (raw) {
+          $el[k] = v;
         } else {
           $el.setAttribute(<string>k, v);
         }

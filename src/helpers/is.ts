@@ -19,6 +19,6 @@ module lux {
     textNode: (a: Node) => a.nodeType === Node.TEXT_NODE,
     element: (a: any): a is Element => a instanceof Element,
     block: (a: any): a is Block => a instanceof Block,
-    vnode: (a: any): a is VNode => a instanceof VNode,
+    vnode: (a: any): a is VNode => is.def(a) && a.__isVnode,
   };
 }

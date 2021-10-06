@@ -9,6 +9,6 @@ module lux {
       attrs = {};
     }
 
-    return new VNode(tag, attrs, children);
+    return vnode(tag, attrs, children);
   }
 }

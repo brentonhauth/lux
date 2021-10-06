@@ -6,7 +6,6 @@ module lux {
   export type ArrayOrRecord = Array<any> | Record<Key, any>;
   export type VNodeOrBlock = VNode|Block;
   export type Primitive = string|number|symbol|boolean;
-  export type VNodeChildren = ArrayOrSingle<VNodeOrBlock|string>;
   export type Renderable = VNode|Block|string;
   export type CreateAppFunction = (state: State) => VNode;
   export type PatchFunction = ($el: Element) => Element;
