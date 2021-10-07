@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   const removePatch: PatchFunction = $el => void $el.remove();
 
   export enum PatchFlags {

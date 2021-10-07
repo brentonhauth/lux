@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export class LoopBlock extends Block {
     constructor() {
       super();

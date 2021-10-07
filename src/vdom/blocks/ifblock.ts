@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export class IfBlock extends Block {
     constructor() {
       super();

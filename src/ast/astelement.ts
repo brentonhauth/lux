@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export class ASTElement {
     public tag: string;
     public attrs: string;

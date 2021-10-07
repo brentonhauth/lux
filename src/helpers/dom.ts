@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export const dom = {
 
     select: (query: string) => document.querySelector(query),

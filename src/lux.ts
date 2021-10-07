@@ -1,4 +1,4 @@
-module lux {
+module Lux {
 
   type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
 
@@ -6,7 +6,9 @@ module lux {
     render: RenderFn;
   }
 
-  export class Lux {
+  let _instance: LuxApp = null;
+
+  class LuxApp {
     private _options: BuildOptions;
     private _root: Element;
     private _v: VNode;
@@ -22,7 +24,7 @@ module lux {
       this._v = null;
     }
 
-    $mount(el: string|Element): Lux {
+    $mount(el: string|Element): LuxApp {
       if (is.string(el)) {
         el = document.querySelector(el);
       }
@@ -31,7 +33,7 @@ module lux {
       return this;
     }
 
-    $update(state: Record<string, any>): Lux {
+    $update(state: Record<string, any>): LuxApp {
       this._state = state;
       const v = this._render(h);
       if (is.undef(v)) {
@@ -45,5 +47,9 @@ module lux {
       this._v = v;
       return this;
     }
+  }
+
+  export function $createApp(options: BuildOptions) {
+    return _instance = new LuxApp(options);
   }
 }

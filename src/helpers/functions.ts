@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export function forIn(object: any, fn: (k: Key, v: any) => void) {
     for (let i in object) {
       fn(i, object[i]);

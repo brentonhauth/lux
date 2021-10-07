@@ -3,13 +3,11 @@
 "use strict";
 
 /** @type {import('./src/h').h} */
-const h = window.lux.h;
+const h = window.Lux.h;
 /** @type {import('./src/h').$if} */
-const $if = window.lux.$if;
-/** @type {import('./src/vdom').VDOM} */
-const $vdom = window.lux.$vdom;
-/** @type {import('./src/lux').Lux} */
-const Lux = window.lux.Lux;
+const $if = window.Lux.$if;
+/** @type {import('./src')} */
+const Lux = window.Lux;
 
 let paused = false;
 let pauseBtn = document.getElementById('PauseBtn');
@@ -19,7 +17,7 @@ pauseBtn.addEventListener('click', () => {
 });
 
 
-const instance = new Lux({
+const instance = Lux.$createApp({
   render(h) {
     let random = Math.round(Math.random() * 20)
     let cs = [];
@@ -42,9 +40,6 @@ const instance = new Lux({
       }
     }, [
       String(count),
-      // $if(() => (count & 1) === 0,
-      //   'span', ['count is even']
-      // ).$else('span', ['count is odd!']),
       ...cs
     ]);
   }

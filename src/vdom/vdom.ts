@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   /** @deprecated */
   export const $vdom = {
     $root: <Element>null,

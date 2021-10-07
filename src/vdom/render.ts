@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export function $render(node: Renderable): Element {
     if (is.string(node)) {
       return <any>dom.createText(node);

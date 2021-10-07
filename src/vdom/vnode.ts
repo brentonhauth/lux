@@ -1,4 +1,4 @@
-module lux {
+module Lux {
 
   export enum VNodeCloneFlags {
     DEEP = 1,

@@ -1,4 +1,4 @@
-module lux {
+module Lux {
   export class Expression {
 
     private _exp: (a: any) => any;

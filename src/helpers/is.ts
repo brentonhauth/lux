@@ -1,4 +1,4 @@
-module lux {
+module Lux {
 
   export const is = {
     array: Array.isArray,
