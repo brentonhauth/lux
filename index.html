@@ -8,12 +8,25 @@
 </head>
 <body>
   <button id="PauseBtn">Pause</button>
-  <div id="App"></div>
+  <div id="App">
+    <div width="200" height="200" id="Blue" style="background-color: lightblue;">
+      <span if="a">IF!</span>
+      <span elif="b">ELSE IF!</span>
+      <span else="c">ELSE!</span>
+      <span>Should Appear</span>
+    </div>
+    <div width="200" height="200" style="background-color: red;">Red</div>
+    <div width="200" height="200" style="background-color: yellow;">Yellow</div>
+    <div width="200" height="200" style="background-color: green;">Green</div>
+  </div>
 
   <!-- Engine Scripts -->
   <script src="./src/h.js"></script>
   <script src="./src/lux.js"></script>
   <script src="./src/types.js"></script>
+  <script src="./src/compiler/compiler.js"></script>
+  <script src="./src/compiler/ast/astelement.js"></script>
+  <script src="./src/compiler/ast/if.js"></script>
   <script src="./src/helpers/dom.js"></script>
   <script src="./src/helpers/functions.js"></script>
   <script src="./src/helpers/is.js"></script>

@@ -71,6 +71,28 @@ module Lux {
     });
   }
 
+  export function removeFromArray<T>(array: T[], field: ArrayOrSingle<T>, compare?: (a:T,b:T)=>boolean): T[] {
+    field = <T[]>flattenArray(arrayWrap(field));
+    compare = compare || ((a, b) => a === b);
+    for (let f of field) {
+      let i = array.findIndex(v => compare(v, f));
+      array.splice(i, 1);
+    }
+    return array;
+  }
+
+  export function overlappedItems<T>(a1: T[], a2: T[], compare?: (a:T,b:T)=>boolean): T[] {
+    const overlap: T[] = [];
+    compare = compare || ((a, b) => a === b);
+    for (let x of a1) {
+      let i = a2.findIndex(y => compare(x, y));
+      if (i !== -1) {
+        overlap.push(a2[i]);
+      }
+    }
+    return overlap;
+  }
+
   export function minimizeArray<T>(array: T[]): ArrayOrSingle<T>|null {
     return array.length <= 1 ? (array[0] || null) : array;
   }

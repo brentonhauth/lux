@@ -36,13 +36,13 @@ module Lux {
 
   export function $mount(node: Element|VNode, target: Element): Element {
     if (is.element(node)) {
-      target.replaceWith(node);
+      target.appendChild(node);
       return node;
     } else if (is.undef(node.$el)) {
       node = clense(node, {});
       node.$el = $render(node);
     }
-    target.replaceWith(node.$el);
+    target.appendChild(node.$el);
     return node.$el;
   }
 }

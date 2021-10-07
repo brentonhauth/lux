@@ -1,9 +1,11 @@
 module Lux {
 
   type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
+  type DataFn = () => Record<Key, any>;
 
   interface BuildOptions {
     render: RenderFn;
+    data: DataFn;
   }
 
   let _instance: LuxApp = null;
@@ -12,16 +14,23 @@ module Lux {
     private _options: BuildOptions;
     private _root: Element;
     private _v: VNode;
+    private _ast: ASTElement;
     private _render: RenderFn;
+    private _data: DataFn;
     private _state: Record<string, any>;
 
     constructor(options: BuildOptions) {
       this._options = options;
-      this._render = options.render.bind(this);
+      this._render = options.render?.bind(this);
+      this._data = options.data?.bind(this) || noop;
       this._options.render = <any>noop;
       this._state = {};
       this._root = null;
       this._v = null;
+    }
+
+    getState() {
+      return this._state;
     }
 
     $mount(el: string|Element): LuxApp {
@@ -47,9 +56,29 @@ module Lux {
       this._v = v;
       return this;
     }
+
+    $compile(el: Element|string): LuxApp {
+      if (is.string(el)) {
+        el = dom.select(el);
+      }
+      this._root = el;
+      // this._v = vnode(el.tagName, );
+      this._ast = <ASTElement>compileFromDOM(el);
+      this._render = () => this._ast.toVNode();
+      this.$update(this._data());
+      return this;
+    }
   }
 
   export function $createApp(options: BuildOptions) {
     return _instance = new LuxApp(options);
+  }
+
+  export function getState() {
+    return _instance.getState();
+  }
+
+  export function getInstance() {
+    return _instance;
   }
 }

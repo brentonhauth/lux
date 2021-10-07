@@ -9,7 +9,7 @@ const $if = window.Lux.$if;
 /** @type {import('./src')} */
 const Lux = window.Lux;
 
-let paused = false;
+let paused = true;
 let pauseBtn = document.getElementById('PauseBtn');
 pauseBtn.addEventListener('click', () => {
   paused = !paused;
@@ -18,17 +18,25 @@ pauseBtn.addEventListener('click', () => {
 
 
 const instance = Lux.$createApp({
+  data() {
+    return {
+      a: true,
+      b: false,
+      c: false
+    }
+  },
   render(h) {
+    let count = (this._state?.count || 0);
     let random = Math.round(Math.random() * 20)
     let cs = [];
     for (let i = 0; i < random; i++) {
       cs.push(h('span', {
         attrs: {
-          id: `span-x-${i}`
+          id: `span-x-${i}`,
+          [`${!(count % i) ? 'mod4' : 'normal'}`]: true
         }
-      }, String(i)));
+      }, !(i % 4) ? h('b', String(i)) : String(i)));
     }
-    let count = (this._state?.count || 0);
     return h('div', {
       attrs: {
         'data-test': count,
@@ -43,7 +51,7 @@ const instance = Lux.$createApp({
       ...cs
     ]);
   }
-}).$mount('#App');
+}).$compile('#App');//.$mount('#App');
 
 
 let count = 0;
