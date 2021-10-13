@@ -13,7 +13,7 @@ let paused = true;
 let pauseBtn = document.getElementById('PauseBtn');
 pauseBtn.addEventListener('click', () => {
   paused = !paused;
-  pauseBtn.innerText = paused ? 'Unpause' : 'Pause';
+  pauseBtn.innerText = paused ? 'Play' : 'Pause';
 });
 
 
@@ -22,7 +22,7 @@ const instance = Lux.$createApp({
     return {
       a: true,
       b: false,
-      c: false
+      c: true,
     }
   },
   render(h) {
@@ -51,7 +51,7 @@ const instance = Lux.$createApp({
       ...cs
     ]);
   }
-}).$compile('#App');//.$mount('#App');
+}).$mount('#App');
 
 
 let count = 0;

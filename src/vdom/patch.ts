@@ -38,12 +38,15 @@ module Lux {
       };
     }
   
-    let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
+    // let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
     let attrsPatch = attrsDiff(oldNode.data?.attrs, newNode.data?.attrs);
     let childrenPatch = childrenDiff(oldNode.children, newNode.children);
   
     return $el => {
-      stylePatch((<any>$el).style||{});
+      if (is.undef($el)) {
+        console.log('$EL', oldNode, newNode);
+      }
+      // stylePatch((<any>$el)?.style||{});
       attrsPatch($el);
       childrenPatch($el);
       return $el;
@@ -55,27 +58,38 @@ module Lux {
     let _new = arrayWrap(newChildren);
   
     const childrenPatches: PatchFunction[] = [];
+    const removes: Array<{i:number}> = [];
   
     for (let i = 0; i < old.length; i++) {
-      let patch = diff(oldChildren[i], newChildren[i]); 
+      let patch = diff(old[i], _new[i]);
+      // if (patch === removePatch) {
+      //   removes.push({ i });
+      //   continue;
+      // }
       // POTENTIAL ISSUE DISCOVERED:
       // -- nodes are being patched out ($el.remove()) and therefore "i"
       // is pointing to an empty element 
       childrenPatches.push($parent => {
-        if (is.undef(newChildren[i])) {
+        console.log('PARENT::', $parent);
+        if (is.undef($parent)) {
+          console.log('UNDEF PARENT::', old[i], _new[i]);
+        }
+
+        if (is.undef(old[i])) {
           // TEMP FIX FOR ISSUE ABOVE
           let n = $parent.childNodes[$parent.childNodes.length - 1];
           patch(<any>n);
-        } else {
-          patch(<any>$parent.childNodes[i]);
+        } else {// if (is.def($parent)) {
+          patch((<any>old[i])?.$el || <any>$parent.childNodes[i]);
         }
+
         return $parent;
       });
     }
     const moreChildren: PatchFunction[] = [];
     for (let i = old.length; i < _new.length; i++) {
       moreChildren.push($parent => {
-        $parent.appendChild($render(newChildren[i]));
+        $parent.appendChild($render(_new[i]));
         return $parent;
       });
     }
@@ -87,6 +101,9 @@ module Lux {
       for (let more of moreChildren) {
         more($parent);
       }
+      // for (let r of removes) {
+      //   removePatch(<any>$parent.childNodes[r.i]);
+      // }
       return $parent;
     };
   }
@@ -117,14 +134,14 @@ module Lux {
     return $el => {
       remove.forEach(raw ?
         r => delete $el[r] :
-        $el.removeAttribute.bind($el));
+        r => $el?.removeAttribute(r));
       forIn(apply, (k, v) => {
         if (is.objectLike(v)) {
           forIn(v, (ik, iv) => $el[k][ik] = iv);
         } else if (raw) {
           $el[k] = v;
         } else {
-          $el.setAttribute(<string>k, v);
+          $el?.setAttribute(<string>k, v);
         }
       });
       return $el;

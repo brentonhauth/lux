@@ -17,6 +17,15 @@ module Lux {
     }
   }
 
+  export function callFn<T>(obj: any, name: string, params?: any[], default0?: T): T {
+    if (is.def(obj)) {
+      return is.fn(obj[name])
+        ? obj[name].call(obj, arrayWrap(params))
+        : default0;
+    }
+    return default0;
+  }
+
   export function noop() {}
 
   export function identity<T>(a: T): T { return a; }

@@ -1,11 +1,18 @@
 module Lux {
   export function $render(node: Renderable): Element {
-    if (is.string(node)) {
+    if (is.undef(node)) {
+      return <any>dom.createComment('NULL');
+    } else if (is.string(node)) {
       return <any>dom.createText(node);
     } else if (is.block(node)) {
       // TEMPORARY
       console.warn('FOUND BLOCK IN RENDER STEP', node);
       return <any>dom.createComment();
+    }
+
+    if (!node.tag) {
+      node.$el = <any>dom.createComment('');
+      return node.$el;
     }
 
     node.$el = dom.createElement(node.tag);

@@ -53,6 +53,8 @@ module Lux {
         const patchFn = diff(this._v, v);
         this._root = patchFn(this._root);
       }
+      console.table([this._v, v], ['tag', '$el', 'data', 'children']);
+      // console.log(this._v, v);
       this._v = v;
       return this;
     }

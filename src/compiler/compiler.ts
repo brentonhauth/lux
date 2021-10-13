@@ -42,7 +42,7 @@ module Lux {
 
         let child = <ASTElement>compiled;
         // TODO: Fix double if's bug (<el if="..."><el if="...">)
-        if (!inIf && child.attrs['if']) {
+        if (is.def(child.attrs['if'])) {
           inIf = true;
           child.flags |= ASTFlags.IF;
           child.if = {
@@ -51,7 +51,7 @@ module Lux {
           };
           sanitizeUniqueAttrs(prev = child, 'if');
           children.push(child);
-        } else if (inIf && child.attrs['elif']) {
+        } else if (inIf && is.def(child.attrs['elif'])) {
           child.flags |= ASTFlags.ELIF;
           prev.if.next = child;
           child.if = {
@@ -59,7 +59,7 @@ module Lux {
             next: null,
           };
           sanitizeUniqueAttrs(prev = child, 'elif');
-        } else if (inIf && child.attrs['else']) {
+        } else if (inIf && is.def(child.attrs['else'])) {
           prev.if.next = child;
           child.flags |= ASTFlags.ELSE;
           sanitizeUniqueAttrs(child, 'else');

@@ -7,8 +7,9 @@ module Lux {
   };
 
   export enum VNodeFlags {
-    TEXT = 1,
-    STATIC = 2,
+    STATIC = 1,
+    TEXT = 2,
+    COMMENT = 4,
     DEFAULT = STATIC|0,
   }
 
@@ -41,11 +42,17 @@ module Lux {
     text: string;
   }
 
+  export interface CommentVNode extends VNode {
+    comment: string;
+  }
+
   function normalizeChildren(children: VNodeChildren): VNodeChildren {
     children = flattenArray(arrayWrap(children));
     for (let i = 0; i < children.length; ++i) {
       if (is.string(children[i])) {
         children[i] = vnode.text(<string>children[i]);
+      } else if (is.undef(children[i])) {
+        vnode.comment(<string>children[i]);
       }
     }
     return children;
@@ -65,13 +72,13 @@ module Lux {
       tag,
       data: <VNodeData>data,
       children,
-      $el: null,
       flags: 0,
+      $el: null,
       __isVnode: true,
     };
   }
 
-  vnode.text = function(text: string): TextVNode {
+  vnode.text = function(text: string|number|boolean): TextVNode {
     return {
       tag: '#text',
       text: String(text),
@@ -81,47 +88,14 @@ module Lux {
     };
   };
 
-  // export class VNode0 {
-  //   public $el?: Element;
-  //   public tag: string;
-  //   public attrs: Record<string, any>;
-  //   public children?: VNodeChildren;
-  //   private flags: VNodeFlags;
-  //   public operations?: VNodeOperations;
+  vnode.comment = function(comment?: string): CommentVNode {
+    return {
+      tag: '#comment',
+      comment: comment || '',
+      flags: VNodeFlags.COMMENT,
+      $el: null,
+      __isVnode: true,
+    };
+  };
 
-  //   constructor(tag: string, attrs: Record<string, any>, children?: VNodeChildren) {
-  //     this.tag = tag;
-  //     this.attrs = attrs;
-  //     this.children = children;
-  //     this.flags = VNodeFlags.STATIC;
-  //   }
-
-  //   public hasFlag(flag: VNodeFlags) {
-  //     return (this.flags & flag) === flag;
-  //   }
-
-  //   public clone(flags=VNodeCloneFlags.DEFAULT): VNode {
-  //     let children: VNodeChildren;
-  //     if ((flags & VNodeCloneFlags.DEEP) && this.children) {
-  //       if (is.array(this.children)) {
-  //         children = [];
-  //         this.children.forEach(c => {
-  //           if (is.string(c)) {
-  //             (<any>children).push(c);
-  //           } else if (is.vnode(c)) {
-  //             (<any>children).push(this.hasFlag(VNodeFlags.STATIC) ? c : c.clone(flags));
-  //           }
-  //         });
-  //       } else {
-  //         children = (is.vnode(this.children) && !this.hasFlag(VNodeFlags.STATIC))
-  //           ? this.children.clone(flags)
-  //           : this.children;
-  //       }
-  //     }
-  //     let cloned = new VNode(this.tag, this.attrs, children);
-  //     cloned.flags = this.flags;
-  //     return cloned;
-  //   }
-
-  // }
 }

@@ -49,6 +49,11 @@ module Lux {
     }
 
     public abstract toVNode(): VNode|string;
+    public markIfStatic() {
+      if (this.type === ASTType.TEXT) {
+        this.flags |= ASTFlags.STATIC;
+      }
+    }
   }
 
   export class ASTElement extends ASTNode {
@@ -56,6 +61,7 @@ module Lux {
     public attrs: VNodeAttrs;
     public children: Array<ASTNode>;
     public if?: IfCondition;
+    public watching?: Array<string>;
 
     constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
       super(el, ASTType.ELEMENT);
@@ -75,19 +81,50 @@ module Lux {
       child.parent = this;
     }
 
+    markIfStatic() {
+      let flags = this.flags & ~ASTFlags.STATIC;
+      if (flags === 0) {
+        this.flags |= ASTFlags.STATIC;
+      }
+    }
+
     toVNode(): VNode {
       console.log('toVNode', this);
       let ast: ASTElement = this;
       if ((this.flags & ASTFlags.IF) && !(this.flags & ASTFlags.ELSE)) {
         ast = processIf(ast);
+        if (is.undef(ast)) {
+          return null;
+        }
       }
 
       const { style } = ast.attrs;
       delete ast.attrs['style'];
-      return vnode(ast.tag, {
+      
+      const v = vnode(ast.tag, {
         attrs: ast.attrs,
         style: <any>style,
       }, ast.children.map(c => c.toVNode()));
+
+      // v.$el = <Element>ast.$el;
+
+      // return new Proxy(v, {
+      //   get(target, p) {
+      //     if (p === '$el') {
+      //       console.log('Getting $el for:', target);
+      //     }
+      //     return target[p];
+      //   },
+      //   set(target, p, value) {
+      //     if (p === '$el') {
+      //       console.log('Setting $el for: ()', target, value);
+      //     }
+      //     target[p] = value;
+      //     return true;
+      //   },
+      // });
+
+      return v;
     }
   }
 
