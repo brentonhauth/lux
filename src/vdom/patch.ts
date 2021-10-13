@@ -7,8 +7,13 @@ module Lux {
     REPLACED = 4,
     UPDATED = 8,
   };
+  // <></>
 
   export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
+    return _diff2(<VNode>oldNode, <VNode>newNode);
+  }
+
+  function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
     if (is.undef(newNode)) {
       return is.undef(oldNode) ? identity : removePatch;
     } else if (is.undef(oldNode)) {
@@ -16,6 +21,8 @@ module Lux {
         let e = $render(newNode);
         if (is.def($el)) {
           $el.replaceWith(e);
+        } else {
+          console.log('null->node render');
         }
         return e;
       };
@@ -49,13 +56,70 @@ module Lux {
       // stylePatch((<any>$el)?.style||{});
       attrsPatch($el);
       childrenPatch($el);
+      newNode.$el = $el;
       return $el;
     };
   };
+
+  function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
+    if (is.commentVnode(newNode)) {
+      return is.commentVnode(oldNode) ? identity : ($el => {
+        let c = $render(newNode);
+        $el.replaceWith(c);
+        return c;
+      });
+    } else if (is.commentVnode(oldNode)) {
+      return $el => {
+        let e = $render(newNode);
+        if (is.def($el)) {
+          $el.replaceWith(e);
+        } else {
+          console.log('null->node render');
+        }
+        return e;
+      };
+    }
+
+    const oldIsText = is.textVnode(oldNode);
+    const newIsText = is.textVnode(newNode);
+
+    if (oldIsText || newIsText) {
+      return ((oldIsText && newIsText) && (<any>oldNode).text === (<any>newNode).text)
+        ? identity
+        : ($el => {
+          let t = $render(newNode);
+          $el.replaceWith(t);
+          return $el;
+        });
+    } else if (oldNode.tag.toLowerCase() !== newNode.tag.toLowerCase()) {
+      return $el => {
+        let e = $render(newNode);
+        $el.replaceWith(e);
+        return e;
+      };
+    }
+  
+    // let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
+    let attrsPatch = attrsDiff(oldNode.data?.attrs, newNode.data?.attrs);
+    let childrenPatch = childrenDiff(oldNode.children, newNode.children);
+  
+    return $el => {
+      if (is.undef($el)) {
+        console.log('$EL', oldNode, newNode);
+      }
+      // stylePatch((<any>$el)?.style||{});
+      attrsPatch($el);
+      childrenPatch($el);
+      newNode.$el = $el;
+      return $el;
+    };
+  }
   
   function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): PatchFunction {
     let old = arrayWrap(oldChildren);
     let _new = arrayWrap(newChildren);
+
+    console.table([old, _new]);
   
     const childrenPatches: PatchFunction[] = [];
     const removes: Array<{i:number}> = [];

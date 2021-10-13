@@ -52,7 +52,9 @@ module Lux {
       if (is.string(children[i])) {
         children[i] = vnode.text(<string>children[i]);
       } else if (is.undef(children[i])) {
-        vnode.comment(<string>children[i]);
+        children[i] = vnode.comment();
+      } else if (!is.vnode(children[i])) {
+        throw new Error(`Not a VNode! (${children[i]})`);
       }
     }
     return children;
@@ -65,7 +67,7 @@ module Lux {
     }
 
     if (is.def(children)) {
-      children = flattenArray(arrayWrap(children));
+      children = normalizeChildren(children);//flattenArray(arrayWrap(children));
     }
 
     return {
@@ -83,6 +85,8 @@ module Lux {
       tag: '#text',
       text: String(text),
       flags: VNodeFlags.TEXT,
+      children: null,
+      data: null,
       $el: null,
       __isVnode: true,
     };
@@ -93,6 +97,8 @@ module Lux {
       tag: '#comment',
       comment: comment || '',
       flags: VNodeFlags.COMMENT,
+      children: null,
+      data: null,
       $el: null,
       __isVnode: true,
     };

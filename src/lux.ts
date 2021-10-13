@@ -45,15 +45,19 @@ module Lux {
     $update(state: Record<string, any>): LuxApp {
       this._state = state;
       const v = this._render(h);
+      console.table([this._v, v], ['tag', '$el', 'data', 'children']);
       if (is.undef(v)) {
         let c = dom.createComment();
         this._root?.replaceWith(c);
         this._root = <any>c;
+      } else if (is.undef(this._v)) {
+        let e = $render(v);
+        this._root.replaceWith(e);
+        this._root = e;
       } else {
         const patchFn = diff(this._v, v);
         this._root = patchFn(this._root);
       }
-      console.table([this._v, v], ['tag', '$el', 'data', 'children']);
       // console.log(this._v, v);
       this._v = v;
       return this;

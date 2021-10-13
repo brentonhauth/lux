@@ -20,5 +20,7 @@ module Lux {
     element: (a: any): a is Element => a instanceof Element,
     block: (a: any): a is Block => a instanceof Block,
     vnode: (a: any): a is VNode => is.def(a) && a.__isVnode,
+    commentVnode: (a: any): a is CommentVNode => is.vnode(a) && a.tag === '#comment',
+    textVnode: (a: any): a is TextVNode => is.vnode(a) && a.tag === '#text',
   };
 }

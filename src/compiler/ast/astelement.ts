@@ -94,7 +94,7 @@ module Lux {
       if ((this.flags & ASTFlags.IF) && !(this.flags & ASTFlags.ELSE)) {
         ast = processIf(ast);
         if (is.undef(ast)) {
-          return null;
+          return vnode.comment('[IF]');
         }
       }
 

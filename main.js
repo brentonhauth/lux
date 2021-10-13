@@ -51,7 +51,26 @@ const instance = Lux.$createApp({
       ...cs
     ]);
   }
-}).$mount('#App');
+}).$compile('#App');
+
+
+const checkboxes = {
+  a: document.getElementById('cbA'),
+  b: document.getElementById('cbB'),
+  c: document.getElementById('cbC'),
+};
+
+Lux.forIn(checkboxes, (k, el) => {
+  const initialState = Lux.getState();
+  el.checked = !!initialState[k];
+  el.addEventListener('change', function() {
+    let state = {};
+    for (let i in checkboxes) {
+      state[i] = checkboxes[i].checked;
+    }
+    instance.$update(state);
+  });
+});
 
 
 let count = 0;

@@ -1,5 +1,10 @@
 module Lux {
+
   export function $render(node: Renderable): Element {
+    return _render2(node);
+  }
+
+  function _render(node: Renderable): Element {
     if (is.undef(node)) {
       return <any>dom.createComment('NULL');
     } else if (is.string(node)) {
@@ -22,6 +27,51 @@ module Lux {
     }
     if (node.data?.style) {
       applyAll((<any>node.$el).style, node.data.style);
+    }
+
+    if (is.def(node.children)) {
+      let children = arrayWrap(node.children);
+      children.forEach(c => {
+        if (is.undef(c)) {
+          node.$el.appendChild(dom.createComment());
+        } else if (is.string(c)) {
+          node.$el.appendChild(dom.createText(c));
+        } else if (is.vnode(c)) {
+          c.$el = $render(c);
+          node.$el.appendChild(c.$el);
+        } else if (is.block(c)) {
+          console.warn('Does not yet support Blocks!');
+        }
+      });
+    }
+
+    return node.$el;
+  }
+
+  function _render2(node: Renderable): Element {
+    if (is.undef(node)) {
+      return <any>dom.createComment('NULL');
+    } else if (is.string(node)) {
+      return <any>dom.createText(node);
+    } else if (is.block(node)) {
+      // TEMPORARY
+      console.warn('FOUND BLOCK IN RENDER STEP', node);
+      return <any>dom.createComment();
+    }
+
+    if (is.commentVnode(node)) {
+      return node.$el = <any>dom.createComment(node.comment);
+    } else if (is.textVnode(node)) {
+      return node.$el = <any>dom.createText(node.text);
+    }
+
+    node.$el = dom.createElement(node.tag);
+    applyAllAttrs(node);
+    if (node.data?.props) {
+      applyAll(node.$el, node.data.props);
+    }
+    if (node.data?.style) {
+      applyAll((<any>node.$el), { style: node.data.style });
     }
 
     if (is.def(node.children)) {
