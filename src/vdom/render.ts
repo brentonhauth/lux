@@ -9,10 +9,6 @@ module Lux {
       return <any>dom.createComment('NULL');
     } else if (is.string(node)) {
       return <any>dom.createText(node);
-    } else if (is.block(node)) {
-      // TEMPORARY
-      console.warn('FOUND BLOCK IN RENDER STEP', node);
-      return <any>dom.createComment();
     }
 
     if (!node.tag) {
@@ -39,8 +35,6 @@ module Lux {
         } else if (is.vnode(c)) {
           c.$el = $render(c);
           node.$el.appendChild(c.$el);
-        } else if (is.block(c)) {
-          console.warn('Does not yet support Blocks!');
         }
       });
     }
@@ -53,10 +47,6 @@ module Lux {
       return <any>dom.createComment('NULL');
     } else if (is.string(node)) {
       return <any>dom.createText(node);
-    } else if (is.block(node)) {
-      // TEMPORARY
-      console.warn('FOUND BLOCK IN RENDER STEP', node);
-      return <any>dom.createComment();
     }
 
     if (is.commentVnode(node)) {
@@ -82,8 +72,6 @@ module Lux {
         } else if (is.vnode(c)) {
           c.$el = $render(c);
           node.$el.appendChild(c.$el);
-        } else if (is.block(c)) {
-          console.warn('Does not yet support Blocks!');
         }
       });
     }
@@ -96,7 +84,6 @@ module Lux {
       target.appendChild(node);
       return node;
     } else if (is.undef(node.$el)) {
-      node = clense(node, {});
       node.$el = $render(node);
     }
     target.appendChild(node.$el);
