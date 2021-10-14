@@ -215,15 +215,15 @@ module Lux {
       }
     });
 
-    return $el => {
+    return ($el: any) => {
       remove.forEach(raw ?
-        r => delete $el[r] :
+        r => delete $el[(<any>r)] :
         r => $el?.removeAttribute(r));
       forIn(apply, (k, v) => {
         if (is.objectLike(v)) {
-          forIn(v, (ik, iv) => $el[k][ik] = iv);
+          forIn(v, (ik, iv) => $el[(<any>k)][ik] = iv);
         } else if (raw) {
-          $el[k] = v;
+          $el[(<any>k)] = v;
         } else {
           $el?.setAttribute(<string>k, v);
         }

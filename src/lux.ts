@@ -1,3 +1,5 @@
+/// <reference path="./vdom/patch.ts" />
+
 module Lux {
 
   type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;

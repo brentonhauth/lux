@@ -28,7 +28,8 @@ module Lux {
           // TODO: Add bindings to list
         }
       }
-      for (let node of elm.childNodes) {
+      for (let i = 0; i < elm.childNodes.length; i++) {
+        const node = elm.childNodes[i];
         const compiled = compileFromDOM(node);
         if (is.undef(compiled)) {
           continue;

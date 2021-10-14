@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2015"
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "ES6",
+    "target": "ES2015",
+    "sourceMap": true,
+    "allowJs": true,
+    "moduleResolution": "node"
   }
 }

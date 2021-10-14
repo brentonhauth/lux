@@ -73,7 +73,7 @@ module Lux {
     if (is.undef(el)) return;
     forIn((attrs || {}), (k, v) => {
       if (is.object(v)) {
-        applyAll(el[k], v);
+        applyAll((<any>el)[k], v);
       } else {
         dom.setAttr(el, String(k), v);
       }
