@@ -8,7 +8,7 @@ module Lux {
   export function applyAll(to: any, props: Record<string|number|symbol, any>) {
     for (let k in props) {
       let v = props[k];
-      if (is.objectLike(v)) {
+      if (is.object(v)) {
         if (is.undef(to[k])) to[k] = {};
         applyAll(to[k], v);
       } else {

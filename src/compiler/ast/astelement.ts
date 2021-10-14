@@ -48,7 +48,7 @@ module Lux {
       return this.parent.children[index + offset];
     }
 
-    public abstract toVNode(): VNode|string;
+    public abstract toVNode(): ArrayOrSingle<VNode>;
     public markIfStatic() {
       if (this.type === ASTType.TEXT) {
         this.flags |= ASTFlags.STATIC;
@@ -61,6 +61,7 @@ module Lux {
     public attrs: VNodeAttrs;
     public children: Array<ASTNode>;
     public if?: IfCondition;
+    public loop?: LoopCondition;
     public watching?: Array<string>;
 
     constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
@@ -88,43 +89,25 @@ module Lux {
       }
     }
 
-    toVNode(): VNode {
-      console.log('toVNode', this);
+    toVNode(): ArrayOrSingle<VNode> {
       let ast: ASTElement = this;
-      if ((this.flags & ASTFlags.IF) && !(this.flags & ASTFlags.ELSE)) {
+      if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
         ast = processIf(ast);
         if (is.undef(ast)) {
           return vnode.comment('[IF]');
         }
+      } else if (ast.flags & ASTFlags.LOOP) {
+        let looped = processLoop(ast);
+        return looped.length === 0 ? vnode.comment('[LOOP]') : looped;
       }
 
       const { style } = ast.attrs;
       delete ast.attrs['style'];
-      
-      const v = vnode(ast.tag, {
+
+      return vnode(ast.tag, {
         attrs: ast.attrs,
         style: <any>style,
-      }, ast.children.map(c => c.toVNode()));
-
-      // v.$el = <Element>ast.$el;
-
-      // return new Proxy(v, {
-      //   get(target, p) {
-      //     if (p === '$el') {
-      //       console.log('Getting $el for:', target);
-      //     }
-      //     return target[p];
-      //   },
-      //   set(target, p, value) {
-      //     if (p === '$el') {
-      //       console.log('Setting $el for: ()', target, value);
-      //     }
-      //     target[p] = value;
-      //     return true;
-      //   },
-      // });
-
-      return v;
+      }, <any>flattenArray(flattenArray(arrayWrap(ast.children)).map(c => c.toVNode())));
     }
   }
 
@@ -136,8 +119,8 @@ module Lux {
       this.text = text;
     }
 
-    toVNode(): string {
-      return <string>this.text;
+    toVNode(): VNode {
+      return vnode.text(this.text);
     }
   }
 }

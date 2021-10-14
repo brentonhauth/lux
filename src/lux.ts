@@ -43,7 +43,7 @@ module Lux {
     }
 
     $update(state: Record<string, any>): LuxApp {
-      this._state = state;
+      applyAll(this._state, state);
       const v = this._render(h);
       console.table([this._v, v], ['tag', '$el', 'data', 'children']);
       if (is.undef(v)) {
@@ -70,7 +70,7 @@ module Lux {
       this._root = el;
       // this._v = vnode(el.tagName, );
       this._ast = <ASTElement>compileFromDOM(el);
-      this._render = () => this._ast.toVNode();
+      this._render = () => <VNode>this._ast.toVNode();
       this.$update(this._data());
       return this;
     }

@@ -104,4 +104,22 @@ module Lux {
     };
   };
 
+  vnode.clone = function(node: VNode, flags?: VNodeCloneFlags): VNode {
+    if (is.textVnode(node)) {
+      return vnode.text(node.text);
+    } else if (is.commentVnode(node)) {
+      return vnode.comment(node.comment);
+    }
+
+    const cloned: VNode = {
+      tag: node.tag,
+      data: Object.create(node.data),
+      flags: node.flags,
+      children: arrayWrap(node.children).map(c => vnode.clone(<VNode>c)),
+      $el: null,
+      __isVnode: true,
+    };
+
+    return cloned;
+  };
 }

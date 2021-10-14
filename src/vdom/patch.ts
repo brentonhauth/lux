@@ -61,8 +61,11 @@ module Lux {
     };
   };
 
+
   function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
-    if (is.commentVnode(newNode)) {
+    if (is.undef(newNode) && is.def(oldNode)) {
+      return removePatch;
+    } else if (is.commentVnode(newNode)) {
       return is.commentVnode(oldNode) ? identity : ($el => {
         let c = $render(newNode);
         $el.replaceWith(c);
@@ -113,6 +116,23 @@ module Lux {
       newNode.$el = $el;
       return $el;
     };
+  }
+
+  function batchDiff(oldList: ArrayOrSingle<VNode>, newList: ArrayOrSingle<VNode>): PatchFunction {
+    const old = arrayWrap(oldList);
+    const _new = arrayWrap(newList);
+
+    let d = old.length - _new.length;
+    let min = Math.min(old.length, _new.length);
+
+    const patches: PatchFunction[] = [];
+
+    for (let i = 0; i < min; ++i) {
+      // patches.push($parent => {
+      // });
+    }
+
+    return null;
   }
   
   function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): PatchFunction {

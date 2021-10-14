@@ -16,11 +16,9 @@ module Lux {
     } else if (el.nodeType === Node.ELEMENT_NODE) {
       const elm = <Element>el, attrNames = elm.getAttributeNames();
       const attrs: VNodeAttrs = {}, children: Array<ASTNode> = [];
-      // const boundFields = attrNames.filter(s => bindingRE.test(s));
-      // removeFromArray(attrNames, boundFields);
       let flags = 0; // default
       let inIf = false;
-      let prev: ASTElement = null; 
+      let prev: ASTElement = null;
 
       for (let name of attrNames) {
         name = name.toLowerCase();
@@ -31,7 +29,7 @@ module Lux {
         }
       }
       for (let node of elm.childNodes) {
-        let compiled = compileFromDOM(node);
+        const compiled = compileFromDOM(node);
         if (is.undef(compiled)) {
           continue;
         } else if (compiled.type !== ASTType.ELEMENT) {
@@ -40,8 +38,7 @@ module Lux {
           continue;
         }
 
-        let child = <ASTElement>compiled;
-        // TODO: Fix double if's bug (<el if="..."><el if="...">)
+        const child = <ASTElement>compiled;
         if (is.def(child.attrs['if'])) {
           inIf = true;
           child.flags |= ASTFlags.IF;
@@ -66,9 +63,14 @@ module Lux {
           inIf = false;
           prev = null;
         } else {
-          children.push(child);
           inIf = false;
+          if (is.def(child.attrs['loop'])) {
+            parseLoop(child);
+            sanitizeUniqueAttrs(child, 'loop');
+          }
+          children.push(child);
         }
+
       }
       ast = new ASTElement(elm, elm.tagName, attrs, children);
       ast.flags |= flags;

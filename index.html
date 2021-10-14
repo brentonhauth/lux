@@ -21,15 +21,17 @@
     <input type="checkbox" id="cbC">
   </span>
   <div id="App">
-    <div width="200" height="200" id="Blue" style="background-color: lightblue;">
+    <div id="Blue" style="width:200px;height: 50px;background-color: lightblue;">
       <b if="c">IF="c"</b>
       <span if="a">IF!</span>
       <span elif="b">ELSE IF!</span>
       <span else>ELSE!</span>
     </div>
-    <div width="200" height="200" style="background-color: red;">Red</div>
-    <div width="200" height="200" style="background-color: yellow;">Yellow</div>
-    <div width="200" height="200" style="background-color: green;">Green</div>
+    <div style="width:200px;height: 50px;background-color: red;">
+      <span loop="i in list" style="width:10px;height:10px;background-color:lightcoral;">I</span>
+    </div>
+    <div style="width:200px;height: 50px;background-color: yellow;">Yellow</div>
+    <div style="width:200px;height: 50px;background-color: green;">Green</div>
   </div>
 
   <div id="TEST">
@@ -44,16 +46,13 @@
   <script src="./src/compiler/compiler.js"></script>
   <script src="./src/compiler/ast/astelement.js"></script>
   <script src="./src/compiler/ast/if.js"></script>
+  <script src="./src/compiler/ast/loop.js"></script>
   <script src="./src/helpers/dom.js"></script>
   <script src="./src/helpers/functions.js"></script>
   <script src="./src/helpers/is.js"></script>
-  <script src="./src/vdom/vdom.js"></script>
   <script src="./src/vdom/vnode.js"></script>
   <script src="./src/vdom/render.js"></script>
   <script src="./src/vdom/patch.js"></script>
-  <script src="./src/vdom/blocks/block.js"></script>
-  <script src="./src/vdom/blocks/ifblock.js"></script>
-  <script src="./src/vdom/blocks/loopblock.js"></script>
 
   <!-- Test Scripts -->
   <script src="./main.js"></script>

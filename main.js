@@ -23,6 +23,7 @@ const instance = Lux.$createApp({
       a: true,
       b: false,
       c: true,
+      list: [1, 2, 3, 4, 5, 6]
     }
   },
   render(h) {
