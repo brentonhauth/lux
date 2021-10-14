@@ -1,8 +1,8 @@
 import { $createApp, getState } from "./lux";
 
 const Lux = {
-  $createApp: $createApp,
-  getState: getState,
+$createApp: $createApp,
+getState: getState,
 };
 
 
