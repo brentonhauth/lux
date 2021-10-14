@@ -5,13 +5,11 @@ const glob = require('glob');
  * @type {import('webpack').Configuration}
  */
 module.exports = {
-  // entry: './src/index.ts',
   entry: {
     ts: glob.sync('./src/**/*.ts'),
   },
-  // context: path.resolve(__dirname, 'src'),
   devtool: 'source-map',
-  mode: 'none',
+  mode: 'production',
   module: {
     rules: [{
       test: /\.tsx?$/,

@@ -61,8 +61,9 @@ const checkboxes = {
   c: document.getElementById('cbC'),
 };
 
-Lux.forIn(checkboxes, (k, el) => {
-  const initialState = Lux.getState();
+for (let k in checkboxes) {
+  let el = checkboxes[k];
+  let initialState = Lux.getState();
   el.checked = !!initialState[k];
   el.addEventListener('change', function() {
     let state = {};
@@ -71,7 +72,7 @@ Lux.forIn(checkboxes, (k, el) => {
     }
     instance.$update(state);
   });
-});
+}
 
 
 let count = 0;

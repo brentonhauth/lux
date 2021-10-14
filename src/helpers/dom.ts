@@ -1,4 +1,4 @@
-module Lux {
+// module Lux {
   export const dom = {
 
     select: (query: string) => document.querySelector(query),
@@ -17,4 +17,4 @@ module Lux {
       return document.createComment(text);
     }
   };
-}
+//}

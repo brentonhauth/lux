@@ -1,4 +1,10 @@
-module Lux {
+// module Lux {
+
+import { arrayWrap, flattenArray } from "../../helpers/functions";
+import { is } from "../../helpers/is";
+import { getState } from "../../lux";
+import { VNode, vnode } from "../../vdom/vnode";
+import { ASTElement, ASTFlags } from "./astelement";
 
   const loopSplitRE = /\s+(?:of|in)\s+/;
 
@@ -17,7 +23,7 @@ module Lux {
     }
 
     const { alias, items } = ast.loop;
-    const state = Lux.getState();
+    const state = getState();
 
     if (!(items in state)) {
       return [];
@@ -74,4 +80,4 @@ module Lux {
     ast.loop = loop;
     ast.flags |= ASTFlags.LOOP;
   }
-}
+//}

@@ -1,4 +1,10 @@
-module Lux {
+// module Lux {
+
+import { dom } from "../helpers/dom";
+import { applyAll, applyAllAttrs, arrayWrap } from "../helpers/functions";
+import { is } from "../helpers/is";
+import { Renderable } from "../types";
+import { VNode } from "./vnode";
 
   export function $render(node: Renderable): Element {
     return _render2(node);
@@ -89,4 +95,4 @@ module Lux {
     target.appendChild(node.$el);
     return node.$el;
   }
-}
+//}

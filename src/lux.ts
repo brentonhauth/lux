@@ -1,6 +1,17 @@
 /// <reference path="./vdom/patch.ts" />
 
-module Lux {
+import { ASTElement } from './compiler/ast/astelement';
+import { compileFromDOM } from './compiler/compiler';
+import { h } from './h';
+import { dom } from './helpers/dom';
+import { applyAll, noop } from './helpers/functions';
+import { is } from './helpers/is';
+import { Key } from './types';
+import { diff } from './vdom/patch';
+import { $mount, $render } from './vdom/render';
+import { VNode } from './vdom/vnode';
+
+// module Lux {
 
   type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
   type DataFn = () => Record<Key, any>;
@@ -89,4 +100,4 @@ module Lux {
   export function getInstance() {
     return _instance;
   }
-}
+//}

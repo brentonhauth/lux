@@ -1,4 +1,8 @@
-module Lux {
+// module Lux {
+
+import { arrayWrap, flattenArray } from "../helpers/functions";
+import { is } from "../helpers/is";
+import { ArrayOrSingle } from "../types";
 
   export enum VNodeCloneFlags {
     DEEP = 1,
@@ -122,4 +126,4 @@ module Lux {
 
     return cloned;
   };
-}
+//}

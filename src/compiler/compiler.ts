@@ -1,4 +1,9 @@
-module Lux {
+// module Lux {
+
+import { is } from "../helpers/is";
+import { VNodeAttrs } from "../vdom/vnode";
+import { ASTElement, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
+import { parseLoop } from "./ast/loop";
 
   const ignoreAttrs = ['class', 'style', 'loop', 'if', 'elif', 'else'];
   const bindingRE = /^:/g;
@@ -91,4 +96,4 @@ module Lux {
       }
     }
   }
-}
+//}

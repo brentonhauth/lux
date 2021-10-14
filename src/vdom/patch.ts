@@ -1,4 +1,10 @@
-module Lux {
+import { arrayWrap, forIn, identity } from "../helpers/functions";
+import { is } from "../helpers/is";
+import { ArrayOrSingle, PatchFunction } from "../types";
+import { $render } from "./render";
+import { VNode, VNodeChildren } from "./vnode";
+
+// module Lux {
   const removePatch: PatchFunction = $el => void $el.remove();
 
   export enum PatchFlags {
@@ -231,4 +237,4 @@ module Lux {
       return $el;
     };
   }
-}
+//}

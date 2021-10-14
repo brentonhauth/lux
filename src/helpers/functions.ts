@@ -1,4 +1,9 @@
-module Lux {
+import { ArrayOrSingle, Key } from "../types";
+import { VNode, VNodeAttrs } from "../vdom/vnode";
+import { dom } from "./dom";
+import { is } from "./is";
+
+// module Lux {
   export function forIn(object: any, fn: (k: Key, v: any) => void) {
     for (let i in object) {
       fn(i, object[i]);
@@ -105,4 +110,4 @@ module Lux {
   export function minimizeArray<T>(array: T[]): ArrayOrSingle<T>|null {
     return array.length <= 1 ? (array[0] || null) : array;
   }
-}
+//}

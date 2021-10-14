@@ -1,4 +1,11 @@
-module Lux {
+import { arrayWrap, flattenArray, removeFromArray } from "../../helpers/functions";
+import { is } from "../../helpers/is";
+import { ArrayOrSingle } from "../../types";
+import { vnode, VNode, VNodeAttrs } from "../../vdom/vnode";
+import { IfCondition, processIf } from "./if";
+import { LoopCondition, processLoop } from "./loop";
+
+// module Lux {
   let AST_ID = 0;
 
   export enum ASTType {
@@ -123,4 +130,4 @@ module Lux {
       return vnode.text(this.text);
     }
   }
-}
+//}

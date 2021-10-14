@@ -1,4 +1,7 @@
-module Lux {
+import { ArrayOrSingle } from "../types";
+import { is } from "./is";
+
+// module Lux {
   export class Pool<T> {
     private items: Array<T>;
 
@@ -37,4 +40,4 @@ module Lux {
       return items;
     }
   }
-}
+//}

@@ -1,4 +1,7 @@
-module Lux {
+// module Lux {
+
+import { Primitive, UndefType } from "../types";
+import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
 
   export const is = {
     array: Array.isArray,
@@ -22,4 +25,4 @@ module Lux {
     commentVnode: (a: any): a is CommentVNode => is.vnode(a) && a.tag === '#comment',
     textVnode: (a: any): a is TextVNode => is.vnode(a) && a.tag === '#text',
   };
-}
+//}

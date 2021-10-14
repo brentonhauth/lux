@@ -1,4 +1,6 @@
-module Lux {
+import { VNode } from "./vdom/vnode";
+
+// module Lux {
   export type Key = string|number;
   export type State = Record<Key, any>
   export type UndefType = null|undefined;
@@ -16,4 +18,4 @@ module Lux {
     $loop?: LoopStatement,
     $bind?: BindStatement,
   };
-}
+//}
