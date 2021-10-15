@@ -1,6 +1,6 @@
 
-import { arrayWrap, flattenArray } from "../helpers/functions";
-import is from "../helpers/is";
+import { arrayWrap, flattenArray, normalizedArray } from "../helpers/array";
+import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { ArrayOrSingle } from "../types";
 
 export enum VNodeCloneFlags {
@@ -50,13 +50,13 @@ export interface CommentVNode extends VNode {
 }
 
 function normalizeChildren(children: VNodeChildren): VNodeChildren {
-  children = flattenArray(arrayWrap(children));
+  children = normalizedArray(children);
   for (let i = 0; i < children.length; ++i) {
-    if (is.string(children[i])) {
+    if (isString(children[i])) {
       children[i] = vnode.text(<string>children[i]);
-    } else if (is.undef(children[i])) {
+    } else if (isUndef(children[i])) {
       children[i] = vnode.comment();
-    } else if (!is.vnode(children[i])) {
+    } else if (!isVNode(children[i])) {
       throw new Error(`Not a VNode! (${children[i]})`);
     }
   }
@@ -64,13 +64,13 @@ function normalizeChildren(children: VNodeChildren): VNodeChildren {
 }
 
 export function vnode(tag: string, data?: VNodeData|VNodeChildren, children?: VNodeChildren): VNode {
-  if (is.array(data) || is.string(data)) {
+  if (isArray(data) || isString(data)) {
     children = data;
     data = {};
   }
 
-  if (is.def(children)) {
-    children = normalizeChildren(children);//flattenArray(arrayWrap(children));
+  if (isDef(children)) {
+    children = normalizeChildren(children);
   }
 
   return {
@@ -108,9 +108,9 @@ vnode.comment = function(comment?: string): CommentVNode {
 };
 
 vnode.clone = function(node: VNode, flags?: VNodeCloneFlags): VNode {
-  if (is.textVnode(node)) {
+  if (isTextVNode(node)) {
     return vnode.text(node.text);
-  } else if (is.commentVnode(node)) {
+  } else if (isCommentVNode(node)) {
     return vnode.comment(node.comment);
   }
 

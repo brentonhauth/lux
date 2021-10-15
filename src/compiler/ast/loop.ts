@@ -1,6 +1,6 @@
 
-import { arrayWrap, flattenArray } from "../../helpers/functions";
-import is from "../../helpers/is";
+import { normalizedArray, flattenArray } from "../../helpers/array";
+import { isString, isUndef } from "../../helpers/is";
 import { getState } from "../../lux";
 import { VNode, vnode } from "../../vdom/vnode";
 import { ASTElement, ASTFlags } from "./astelement";
@@ -16,7 +16,7 @@ export interface LoopCondition {
 }
 
 export function processLoop(ast: ASTElement): Array<VNode> {
-  if (is.undef(ast.loop)) {
+  if (isUndef(ast.loop)) {
     console.warn('Is not loop');
     return [];
   }
@@ -30,20 +30,18 @@ export function processLoop(ast: ASTElement): Array<VNode> {
 
   let list: Array<any> = state[items];
 
-  if (is.string(list)) {
+  if (isString(list)) {
     list = list.split('');
   }
   if (list.length === 0) {
     return [];
   }
 
-  const style = ast.attrs['style'];
-  delete ast.attrs['style'];
-
+  const children = normalizedArray(ast.children).map(c => c.toVNode());
   const v = vnode(ast.tag, {
     attrs: ast.attrs,
-    style: <any>style,
-  }, <any>flattenArray(flattenArray(arrayWrap(ast.children)).map(c => c.toVNode())));
+    style: ast.style,
+  }, <any>flattenArray(children));
 
   const output = [];
   let first = true;
@@ -66,7 +64,7 @@ export function parseLoop(ast: ASTElement) {
   const [alias, items] = exp.split(loopSplitRE);
 
 
-  if (!is.string(alias) || !is.string(items)) {
+  if (!isString(alias) || !isString(items)) {
     throw new Error('Could not parse loop');
   }
 

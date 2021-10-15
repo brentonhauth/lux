@@ -1,4 +1,4 @@
-import is from "../../helpers/is";
+import { isDef, isUndef } from "../../helpers/is";
 import { getState } from "../../lux";
 import { IfStatement } from "../../types";
 import { ASTElement } from "./astelement";
@@ -10,12 +10,12 @@ export interface IfCondition {
 }
 
 export function processIf(ast: ASTElement) {
-  if (is.undef(ast.if)) {
+  if (isUndef(ast.if)) {
     return null;
   }
 
   const state = getState();
-  while (is.def(ast?.if)) {
+  while (isDef(ast?.if)) {
     if (state[ast.if.exp]) { // temporary
       console.log('CORRECT IF STATEMENT', ast.if.exp);
       return ast;

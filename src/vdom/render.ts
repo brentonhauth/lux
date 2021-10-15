@@ -1,7 +1,8 @@
 
 import { dom } from "../helpers/dom";
-import { applyAll, applyAllAttrs, arrayWrap } from "../helpers/functions";
-import is from "../helpers/is";
+import { applyAll, applyAllAttrs } from "../helpers/functions";
+import { arrayWrap } from "../helpers/array";
+import { isCommentVNode, isDef, isElement, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { Renderable } from "../types";
 import { VNode } from "./vnode";
 
@@ -10,9 +11,9 @@ export function $render(node: Renderable): Element {
 }
 
 function _render(node: Renderable): Element {
-  if (is.undef(node)) {
+  if (isUndef(node)) {
     return <any>dom.createComment('NULL');
-  } else if (is.string(node)) {
+  } else if (isString(node)) {
     return <any>dom.createText(node);
   }
 
@@ -30,14 +31,14 @@ function _render(node: Renderable): Element {
     applyAll((<any>node.$el).style, node.data.style);
   }
 
-  if (is.def(node.children)) {
+  if (isDef(node.children)) {
     let children = arrayWrap(node.children);
     children.forEach(c => {
-      if (is.undef(c)) {
+      if (isUndef(c)) {
         node.$el.appendChild(dom.createComment());
-      } else if (is.string(c)) {
+      } else if (isString(c)) {
         node.$el.appendChild(dom.createText(c));
-      } else if (is.vnode(c)) {
+      } else if (isVNode(c)) {
         c.$el = $render(c);
         node.$el.appendChild(c.$el);
       }
@@ -48,15 +49,15 @@ function _render(node: Renderable): Element {
 }
 
 function _render2(node: Renderable): Element {
-  if (is.undef(node)) {
+  if (isUndef(node)) {
     return <any>dom.createComment('NULL');
-  } else if (is.string(node)) {
+  } else if (isString(node)) {
     return <any>dom.createText(node);
   }
 
-  if (is.commentVnode(node)) {
+  if (isCommentVNode(node)) {
     return node.$el = <any>dom.createComment(node.comment);
-  } else if (is.textVnode(node)) {
+  } else if (isTextVNode(node)) {
     return node.$el = <any>dom.createText(node.text);
   }
 
@@ -69,12 +70,12 @@ function _render2(node: Renderable): Element {
     applyAll((<any>node.$el), { style: node.data.style });
   }
 
-  if (is.def(node.children)) {
+  if (isDef(node.children)) {
     let children = arrayWrap(node.children);
     children.forEach(c => {
-      if (is.string(c)) {
+      if (isString(c)) {
         node.$el.appendChild(dom.createText(c));
-      } else if (is.vnode(c)) {
+      } else if (isVNode(c)) {
         c.$el = $render(c);
         node.$el.appendChild(c.$el);
       }
@@ -85,10 +86,10 @@ function _render2(node: Renderable): Element {
 }
 
 export function $mount(node: Element|VNode, target: Element): Element {
-  if (is.element(node)) {
+  if (isElement(node)) {
     target.appendChild(node);
     return node;
-  } else if (is.undef(node.$el)) {
+  } else if (isUndef(node.$el)) {
     node.$el = $render(node);
   }
   target.appendChild(node.$el);

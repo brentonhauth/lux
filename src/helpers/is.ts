@@ -1,28 +1,62 @@
 
-import { Primitive, UndefType } from "../types";
+import { AnyFunction, Primitive, UndefType } from "../types";
 import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
 
-const is = {
-  array: Array.isArray,
-  string: (a: any): a is string => typeof a === 'string',
-  number: (a: any): a is number => typeof a === 'number',
-  primitive: (a: any): a is Primitive => (
+export const isArray = Array.isArray;
+
+export function isString(a: any): a is string {
+  return typeof a === 'string';
+}
+
+export function isNumber(a: any): a is number {
+  return typeof a === 'number';
+}
+
+export function isPrimitive(a: any): a is Primitive {
+  return (
     typeof a === 'string' ||
     typeof a === 'number' ||
     typeof a === 'boolean' ||
     typeof a === 'symbol'
-  ),
-  objectLike: (a: any) => a != null && typeof a === 'object',
-  object: (a: any) => is.objectLike(a) && !is.array(a),
-  undef: (a: any): a is UndefType => a == null,
-  def: (a: any) => a != null,
-  fn: (a: any) => typeof a === 'function',
-  regexp: (a: any): a is RegExp => a instanceof RegExp,
-  textNode: (a: Node) => a.nodeType === Node.TEXT_NODE,
-  element: (a: any): a is Element => a instanceof Element,
-  vnode: (a: any): a is VNode => is.def(a) && a.__isVnode,
-  commentVnode: (a: any): a is CommentVNode => is.vnode(a) && a.tag === '#comment',
-  textVnode: (a: any): a is TextVNode => is.vnode(a) && a.tag === '#text',
-};
+  );
+}
 
-export default is;
+export function isObjectLike(a: any) {
+  return a != null && typeof a === 'object';
+}
+
+export function isObject(a: any) {
+  return isObjectLike(a) && !isArray(a);
+}
+
+export function isUndef(a: any): a is UndefType {
+  return a == null;
+}
+
+export function isDef(a: any) {
+  return a != null;
+}
+
+export function isFunc(a: any): a is AnyFunction {
+  return typeof a === 'function'; 
+}
+
+export function isRegExp(a: any): a is RegExp {
+  return a instanceof RegExp;
+}
+
+export function isElement(a: any): a is Element {
+  return a instanceof Element;
+}
+
+export function isVNode(a: any): a is VNode {
+  return isDef(a) && a.__isVnode;
+}
+
+export function isTextVNode(a: any): a is TextVNode {
+  return isVNode(a) && a.tag === '#text';
+}
+
+export function isCommentVNode(a: any): a is CommentVNode {
+  return isVNode(a) && a.tag === '#comment';
+}

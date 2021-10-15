@@ -1,5 +1,5 @@
 
-import is from "../helpers/is";
+import { isDef, isUndef } from "../helpers/is";
 import { VNodeAttrs } from "../vdom/vnode";
 import { ASTElement, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
@@ -35,7 +35,7 @@ function _compileFromDOM(el: Element|Node): ASTNode {
     for (let i = 0; i < elm.childNodes.length; i++) {
       const node = elm.childNodes[i];
       const compiled = compileFromDOM(node);
-      if (is.undef(compiled)) {
+      if (isUndef(compiled)) {
         continue;
       } else if (compiled.type !== ASTType.ELEMENT) {
         children.push(compiled);
@@ -44,7 +44,7 @@ function _compileFromDOM(el: Element|Node): ASTNode {
       }
 
       const child = <ASTElement>compiled;
-      if (is.def(child.attrs['if'])) {
+      if (isDef(child.attrs['if'])) {
         inIf = true;
         child.flags |= ASTFlags.IF;
         child.if = {
@@ -53,7 +53,7 @@ function _compileFromDOM(el: Element|Node): ASTNode {
         };
         sanitizeUniqueAttrs(prev = child, 'if');
         children.push(child);
-      } else if (inIf && is.def(child.attrs['elif'])) {
+      } else if (inIf && isDef(child.attrs['elif'])) {
         child.flags |= ASTFlags.ELIF;
         prev.if.next = child;
         child.if = {
@@ -61,7 +61,7 @@ function _compileFromDOM(el: Element|Node): ASTNode {
           next: null,
         };
         sanitizeUniqueAttrs(prev = child, 'elif');
-      } else if (inIf && is.def(child.attrs['else'])) {
+      } else if (inIf && isDef(child.attrs['else'])) {
         prev.if.next = child;
         child.flags |= ASTFlags.ELSE;
         sanitizeUniqueAttrs(child, 'else');
@@ -69,7 +69,7 @@ function _compileFromDOM(el: Element|Node): ASTNode {
         prev = null;
       } else {
         inIf = false;
-        if (is.def(child.attrs['loop'])) {
+        if (isDef(child.attrs['loop'])) {
           parseLoop(child);
           sanitizeUniqueAttrs(child, 'loop');
         }
@@ -89,7 +89,7 @@ function sanitizeUniqueAttrs(el: ASTElement, keep: string) {
     if (u !== keep && u in el.attrs) {
       console.warn(`Cannot have "${u}" attribute with "${keep}".`);
       delete el.attrs[u];
-    } else if (is.def(el.attrs[`:${u}`])) {
+    } else if (isDef(el.attrs[`:${u}`])) {
       console.warn(`"${u}" is not meant to be bound!`);
       delete el.attrs[u];
     }

@@ -5,7 +5,7 @@ import { compileFromDOM } from './compiler/compiler';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
-import is from './helpers/is';
+import { isString, isUndef } from './helpers/is';
 import { Key } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
@@ -46,7 +46,7 @@ class LuxApp {
   }
 
   $mount(el: string|Element): LuxApp {
-    if (is.string(el)) {
+    if (isString(el)) {
       el = document.querySelector(el);
     }
     this._v = this._render(h);
@@ -58,11 +58,11 @@ class LuxApp {
     applyAll(this._state, state);
     const v = this._render(h);
     console.table([this._v, v], ['tag', '$el', 'data', 'children']);
-    if (is.undef(v)) {
+    if (isUndef(v)) {
       let c = dom.createComment();
       this._root?.replaceWith(c);
       this._root = <any>c;
-    } else if (is.undef(this._v)) {
+    } else if (isUndef(this._v)) {
       let e = $render(v);
       this._root.replaceWith(e);
       this._root = e;
@@ -76,7 +76,7 @@ class LuxApp {
   }
 
   $compile(el: Element|string): LuxApp {
-    if (is.string(el)) {
+    if (isString(el)) {
       el = dom.select(el);
     }
     this._root = el;

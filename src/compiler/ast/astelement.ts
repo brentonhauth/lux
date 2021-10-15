@@ -1,7 +1,7 @@
-import { arrayWrap, flattenArray, removeFromArray } from "../../helpers/functions";
-import is from "../../helpers/is";
+import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
+import { isDef, isUndef } from "../../helpers/is";
 import { ArrayOrSingle } from "../../types";
-import { vnode, VNode, VNodeAttrs } from "../../vdom/vnode";
+import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
 import { IfCondition, processIf } from "./if";
 import { LoopCondition, processLoop } from "./loop";
 
@@ -49,7 +49,7 @@ export abstract class ASTNode {
   }
   
   public getSibling(offset: number) {
-    if (is.undef(this.parent)) return null;
+    if (isUndef(this.parent)) return null;
     const index = this.parent.children.findIndex(n => n.id === this.id);
     return this.parent.children[index + offset];
   }
@@ -65,6 +65,7 @@ export abstract class ASTNode {
 export class ASTElement extends ASTNode {
   public tag: string;
   public attrs: VNodeAttrs;
+  public style: VNodeStyle;
   public children: Array<ASTNode>;
   public if?: IfCondition;
   public loop?: LoopCondition;
@@ -73,6 +74,8 @@ export class ASTElement extends ASTNode {
   constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
     super(el, ASTType.ELEMENT);
     this.tag = tag;
+    this.style = <any>(isDef(attrs) && attrs['style']);
+    if (isDef(this.style)) delete attrs['style'];
     this.attrs = attrs;
     this.children = arrayWrap(children);
     this.children.forEach(c => c.parent = this);
@@ -80,7 +83,7 @@ export class ASTElement extends ASTNode {
 
   addChild(child: ASTElement) {
     this.children.push(child);
-    if (is.def(child.parent)) {
+    if (isDef(child.parent)) {
       removeFromArray(
         child.parent.children,
         child, (p, c) => p.id === c.id);
@@ -99,7 +102,7 @@ export class ASTElement extends ASTNode {
     let ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
       ast = processIf(ast);
-      if (is.undef(ast)) {
+      if (isUndef(ast)) {
         return vnode.comment('[IF]');
       }
     } else if (ast.flags & ASTFlags.LOOP) {
@@ -107,13 +110,12 @@ export class ASTElement extends ASTNode {
       return looped.length === 0 ? vnode.comment('[LOOP]') : looped;
     }
 
-    const { style } = ast.attrs;
-    delete ast.attrs['style'];
+    const children = normalizedArray(ast.children).map(c => c.toVNode());
 
     return vnode(ast.tag, {
       attrs: ast.attrs,
-      style: <any>style,
-    }, <any>flattenArray(flattenArray(arrayWrap(ast.children)).map(c => c.toVNode())));
+      style: ast.style,
+    }, <any>flattenArray(children));
   }
 }
 

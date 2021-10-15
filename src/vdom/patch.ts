@@ -1,5 +1,6 @@
-import { arrayWrap, forIn, identity } from "../helpers/functions";
-import is from "../helpers/is";
+import { forIn, identity } from "../helpers/functions";
+import { arrayWrap } from "../helpers/array";
+import { isCommentVNode, isDef, isObjectLike, isString, isTextVNode, isUndef } from "../helpers/is";
 import { ArrayOrSingle, PatchFunction } from "../types";
 import { $render } from "./render";
 import { VNode, VNodeChildren } from "./vnode";
@@ -19,12 +20,12 @@ export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunctio
 }
 
 function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
-  if (is.undef(newNode)) {
-    return is.undef(oldNode) ? identity : removePatch;
-  } else if (is.undef(oldNode)) {
+  if (isUndef(newNode)) {
+    return isUndef(oldNode) ? identity : removePatch;
+  } else if (isUndef(oldNode)) {
     return $el => {
       let e = $render(newNode);
-      if (is.def($el)) {
+      if (isDef($el)) {
         $el.replaceWith(e);
       } else {
         console.log('null->node render');
@@ -33,7 +34,7 @@ function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
     };
   }
 
-  if (is.string(oldNode) || is.string(newNode)) {
+  if (isString(oldNode) || isString(newNode)) {
     if (oldNode !== newNode) {
       return $el => {
         let e = $render(newNode);
@@ -55,7 +56,7 @@ function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
   let childrenPatch = childrenDiff(oldNode.children, newNode.children);
 
   return $el => {
-    if (is.undef($el)) {
+    if (isUndef($el)) {
       console.log('$EL', oldNode, newNode);
     }
     // stylePatch((<any>$el)?.style||{});
@@ -68,18 +69,18 @@ function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
 
 
 function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
-  if (is.undef(newNode) && is.def(oldNode)) {
+  if (isUndef(newNode) && isDef(oldNode)) {
     return removePatch;
-  } else if (is.commentVnode(newNode)) {
-    return is.commentVnode(oldNode) ? identity : ($el => {
+  } else if (isCommentVNode(newNode)) {
+    return isCommentVNode(oldNode) ? identity : ($el => {
       let c = $render(newNode);
       $el.replaceWith(c);
       return c;
     });
-  } else if (is.commentVnode(oldNode)) {
+  } else if (isCommentVNode(oldNode)) {
     return $el => {
       let e = $render(newNode);
-      if (is.def($el)) {
+      if (isDef($el)) {
         $el.replaceWith(e);
       } else {
         console.log('null->node render');
@@ -88,8 +89,8 @@ function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
     };
   }
 
-  const oldIsText = is.textVnode(oldNode);
-  const newIsText = is.textVnode(newNode);
+  const oldIsText = isTextVNode(oldNode);
+  const newIsText = isTextVNode(newNode);
 
   if (oldIsText || newIsText) {
     return ((oldIsText && newIsText) && (<any>oldNode).text === (<any>newNode).text)
@@ -112,7 +113,7 @@ function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
   let childrenPatch = childrenDiff(oldNode.children, newNode.children);
 
   return $el => {
-    if (is.undef($el)) {
+    if (isUndef($el)) {
       console.log('$EL', oldNode, newNode);
     }
     // stylePatch((<any>$el)?.style||{});
@@ -160,15 +161,15 @@ function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): P
     // is pointing to an empty element 
     childrenPatches.push($parent => {
       console.log('PARENT::', $parent);
-      if (is.undef($parent)) {
+      if (isUndef($parent)) {
         console.log('UNDEF PARENT::', old[i], _new[i]);
       }
 
-      if (is.undef(old[i])) {
+      if (isUndef(old[i])) {
         // TEMP FIX FOR ISSUE ABOVE
         let n = $parent.childNodes[$parent.childNodes.length - 1];
         patch(<any>n);
-      } else {// if (is.def($parent)) {
+      } else {// if (isDef($parent)) {
         patch((<any>old[i])?.$el || <any>$parent.childNodes[i]);
       }
 
@@ -198,7 +199,7 @@ function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): P
 }
 
 function attrsDiff(oldAttrs: Record<string, any>, newAttrs: Record<string, any>, raw=false): PatchFunction {
-  if (is.undef(oldAttrs) && is.undef(newAttrs)) {
+  if (isUndef(oldAttrs) && isUndef(newAttrs)) {
     return identity;
   }
   let apply: Record<string, any> = {};
@@ -225,7 +226,7 @@ function attrsDiff(oldAttrs: Record<string, any>, newAttrs: Record<string, any>,
       r => delete $el[(<any>r)] :
       r => $el?.removeAttribute(r));
     forIn(apply, (k, v) => {
-      if (is.objectLike(v)) {
+      if (isObjectLike(v)) {
         forIn(v, (ik, iv) => $el[(<any>k)][ik] = iv);
       } else if (raw) {
         $el[(<any>k)] = v;

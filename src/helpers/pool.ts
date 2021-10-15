@@ -1,17 +1,17 @@
 import { ArrayOrSingle } from "../types";
-import is from "./is";
+import { isArray, isDef } from "./is";
 
 export class Pool<T> {
   private items: Array<T>;
 
   constructor(items?: Array<T>) {
-    this.items = is.def(items) ? items : [];
+    this.items = isDef(items) ? items : [];
   }
 
   public get size() { return this.items.length; }
 
   public push(items: ArrayOrSingle<T>) {
-    if (is.array(items)) {
+    if (isArray(items)) {
       this.items.push(...items);
     } else {
       this.items.push(items);

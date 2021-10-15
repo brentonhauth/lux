@@ -1,13 +1,13 @@
 import { vnode, VNode } from './vdom/vnode';
 import { ArrayOrSingle } from './types';
-import is from './helpers/is';
+import { isArray, isElement, isString } from './helpers/is';
 
 export function h(tag: Element|string, attrs?: any, children?: ArrayOrSingle<string|VNode>) {
-  if (is.element(tag)) {
+  if (isElement(tag)) {
     console.warn('From element is not yet supported');
     return null;
   }
-  if (is.string(attrs) || is.array(attrs)) {
+  if (isString(attrs) || isArray(attrs)) {
     children = attrs;
     attrs = {};
   }
