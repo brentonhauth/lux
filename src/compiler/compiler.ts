@@ -1,5 +1,5 @@
 
-import { is } from "../helpers/is";
+import is from "../helpers/is";
 import { VNodeAttrs } from "../vdom/vnode";
 import { ASTElement, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";

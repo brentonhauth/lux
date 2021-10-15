@@ -1,6 +1,6 @@
 import { vnode, VNode } from './vdom/vnode';
 import { ArrayOrSingle } from './types';
-import { is } from './helpers/is';
+import is from './helpers/is';
 
 export function h(tag: Element|string, attrs?: any, children?: ArrayOrSingle<string|VNode>) {
   if (is.element(tag)) {

@@ -2,7 +2,7 @@
 import { Primitive, UndefType } from "../types";
 import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
 
-export const is = {
+const is = {
   array: Array.isArray,
   string: (a: any): a is string => typeof a === 'string',
   number: (a: any): a is number => typeof a === 'number',
@@ -24,3 +24,5 @@ export const is = {
   commentVnode: (a: any): a is CommentVNode => is.vnode(a) && a.tag === '#comment',
   textVnode: (a: any): a is TextVNode => is.vnode(a) && a.tag === '#text',
 };
+
+export default is;

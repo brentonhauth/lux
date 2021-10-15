@@ -1,7 +1,7 @@
 import { ArrayOrSingle, Key } from "../types";
 import { VNode, VNodeAttrs } from "../vdom/vnode";
 import { dom } from "./dom";
-import { is } from "./is";
+import is from "./is";
 
 export function forIn(object: any, fn: (k: Key, v: any) => void) {
   for (let i in object) {

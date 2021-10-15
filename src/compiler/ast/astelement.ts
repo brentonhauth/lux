@@ -1,5 +1,5 @@
 import { arrayWrap, flattenArray, removeFromArray } from "../../helpers/functions";
-import { is } from "../../helpers/is";
+import is from "../../helpers/is";
 import { ArrayOrSingle } from "../../types";
 import { vnode, VNode, VNodeAttrs } from "../../vdom/vnode";
 import { IfCondition, processIf } from "./if";

@@ -1,5 +1,5 @@
 import { arrayWrap, forIn, identity } from "../helpers/functions";
-import { is } from "../helpers/is";
+import is from "../helpers/is";
 import { ArrayOrSingle, PatchFunction } from "../types";
 import { $render } from "./render";
 import { VNode, VNodeChildren } from "./vnode";

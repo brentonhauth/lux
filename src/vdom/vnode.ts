@@ -1,6 +1,6 @@
 
 import { arrayWrap, flattenArray } from "../helpers/functions";
-import { is } from "../helpers/is";
+import is from "../helpers/is";
 import { ArrayOrSingle } from "../types";
 
 export enum VNodeCloneFlags {

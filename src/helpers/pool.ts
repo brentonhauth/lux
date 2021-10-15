@@ -1,5 +1,5 @@
 import { ArrayOrSingle } from "../types";
-import { is } from "./is";
+import is from "./is";
 
 export class Pool<T> {
   private items: Array<T>;

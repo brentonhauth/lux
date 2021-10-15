@@ -1,7 +1,7 @@
 
 import { dom } from "../helpers/dom";
 import { applyAll, applyAllAttrs, arrayWrap } from "../helpers/functions";
-import { is } from "../helpers/is";
+import is from "../helpers/is";
 import { Renderable } from "../types";
 import { VNode } from "./vnode";
 

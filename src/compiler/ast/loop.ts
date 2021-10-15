@@ -1,6 +1,6 @@
 
 import { arrayWrap, flattenArray } from "../../helpers/functions";
-import { is } from "../../helpers/is";
+import is from "../../helpers/is";
 import { getState } from "../../lux";
 import { VNode, vnode } from "../../vdom/vnode";
 import { ASTElement, ASTFlags } from "./astelement";

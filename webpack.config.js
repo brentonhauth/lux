@@ -1,6 +1,9 @@
 const path = require('path');
 const glob = require('glob');
 
+const ENV = process.env.NODE_ENV;
+const isProd = ENV === 'production';
+
 /**
  * @type {import('webpack').Configuration}
  */
@@ -8,20 +11,20 @@ module.exports = {
   entry: {
     ts: glob.sync('./src/**/*.ts'),
   },
-  devtool: 'source-map',
-  mode: 'production',
+  devtool: isProd ? false : 'source-map',
+  mode: ENV,
   module: {
     rules: [{
-      test: /\.tsx?$/,
+      test: /\.ts$/,
       use: 'ts-loader',
       exclude: /node_modules/,
     }],
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: ['.ts', '.js'],
   },
   output: {
-    filename: 'lux.js',
+    filename: `lux.${ENV}.js`,
     path: path.resolve(__dirname, 'build'),
   },
 };

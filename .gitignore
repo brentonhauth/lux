@@ -3,4 +3,4 @@ build/
 *.js.map
 *.js
 !main.js
-!webpack.config.js
+!webpack.*.js

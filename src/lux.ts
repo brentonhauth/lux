@@ -5,7 +5,7 @@ import { compileFromDOM } from './compiler/compiler';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
-import { is } from './helpers/is';
+import is from './helpers/is';
 import { Key } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
@@ -99,3 +99,11 @@ export function getState() {
 export function getInstance() {
   return _instance;
 }
+
+const Lux = {
+  $createApp,
+  getState,
+  getInstance
+};
+
+(<any>globalThis).Lux = Lux;

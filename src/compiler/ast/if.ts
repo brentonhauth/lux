@@ -1,4 +1,4 @@
-import { is } from "../../helpers/is";
+import is from "../../helpers/is";
 import { getState } from "../../lux";
 import { IfStatement } from "../../types";
 import { ASTElement } from "./astelement";
