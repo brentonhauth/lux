@@ -1,7 +1,9 @@
 import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
-import { isDef, isUndef } from "../../helpers/is";
+import { isBlankString, isDef, isUndef, isUndefOrEmpty } from "../../helpers/is";
+import { trimAll } from "../../helpers/strings";
 import { ArrayOrSingle } from "../../types";
 import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
+import { processExpression } from "./expression";
 import { IfCondition, processIf } from "./if";
 import { LoopCondition, processLoop } from "./loop";
 
@@ -74,8 +76,8 @@ export class ASTElement extends ASTNode {
   constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
     super(el, ASTType.ELEMENT);
     this.tag = tag;
-    this.style = <any>(isDef(attrs) && attrs['style']);
-    if (isDef(this.style)) delete attrs['style'];
+    this.style = <any>attrs.style;
+    if (isDef(this.style)) delete attrs.style;
     this.attrs = attrs;
     this.children = arrayWrap(children);
     this.children.forEach(c => c.parent = this);
@@ -99,23 +101,56 @@ export class ASTElement extends ASTNode {
   }
 
   toVNode(): ArrayOrSingle<VNode> {
-    let ast: ASTElement = this;
+    let v: VNode, ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
       ast = processIf(ast);
       if (isUndef(ast)) {
-        return vnode.comment('[IF]');
+        v = vnode.comment('[IF]');
+        // v.$el = <Element>this.$el;
+        return v;
       }
     } else if (ast.flags & ASTFlags.LOOP) {
       let looped = processLoop(ast);
-      return looped.length === 0 ? vnode.comment('[LOOP]') : looped;
+      if (looped.length === 0) {
+        v = vnode.comment('[LOOP]');
+        // v.$el = <Element>this.$el;
+        return v;
+      } else {
+        // TODO: implement loop in new sys
+        return looped;
+      }
     }
 
     const children = normalizedArray(ast.children).map(c => c.toVNode());
 
-    return vnode(ast.tag, {
+    v = vnode(ast.tag, {
       attrs: ast.attrs,
       style: ast.style,
     }, <any>flattenArray(children));
+    // v.$el = <Element>this.$el;
+    return v;
+  }
+}
+
+export class ASTExpression extends ASTNode {
+  public exp: string;
+  public alias: string;
+
+  constructor(el: Node, exp: string) {
+    super(el, ASTType.EXPRESSION);
+    this.exp = trimAll(exp);
+    [this.alias] = arrayWrap(this.exp.match(/[_a-z$]+[\w$]*/ig));
+  }
+
+  toVNode(): VNode {
+    let v: VNode;
+    if (!isUndefOrEmpty(this.alias)) {
+      v = processExpression(this);
+    } else {
+      v = vnode.text('');
+    }
+    // v.$el = <Element>this.$el;
+    return v;
   }
 }
 
@@ -128,6 +163,8 @@ export class ASTText extends ASTNode {
   }
 
   toVNode(): VNode {
-    return vnode.text(this.text);
+    const v = vnode.text(this.text);
+    // v.$el = <Element>this.$el;
+    return v;
   }
 }
