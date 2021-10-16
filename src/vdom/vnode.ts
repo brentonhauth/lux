@@ -1,5 +1,5 @@
 
-import { arrayWrap, flattenArray, normalizedArray } from "../helpers/array";
+import { arrayWrap, normalizedArray } from "../helpers/array";
 import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { ArrayOrSingle } from "../types";
 
@@ -17,14 +17,12 @@ export enum VNodeFlags {
 }
 
 export type VNodeAttrs = Record<string, string | number | boolean>;
-export type VNodeProps = Record<string, any>;
 export type VNodeClass = ArrayOrSingle<string>|Record<string, boolean>;
 export type VNodeStyle = Record<string, string|number>;
 export type VNodeEvents = Record<string, Event>;
 export type VNodeChildren = ArrayOrSingle<VNode|string>;
 
 export interface VNodeData {
-  props?: VNodeProps;
   attrs?: VNodeAttrs;
   class?: VNodeClass;
   style?: VNodeStyle;

@@ -5,8 +5,8 @@ import { compileFromDOM } from './compiler/compiler';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
-import { isString, isUndef } from './helpers/is';
-import { Key } from './types';
+import { isArray, isDef, isString, isUndef } from './helpers/is';
+import { ArrayOrSingle, Key, State } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
@@ -41,8 +41,14 @@ class LuxApp {
     this._v = null;
   }
 
-  getState() {
-    return this._state;
+  getState(query?: ArrayOrSingle<string>) {
+    if (isUndef(query)) {
+      return this._state;
+    } else if (isArray(query)) {
+      return query.map(q => this._state[q]);
+    } else {
+      return this._state[query];
+    }
   }
 
   $mount(el: string|Element): LuxApp {
@@ -57,7 +63,7 @@ class LuxApp {
   $update(state: Record<string, any>): LuxApp {
     applyAll(this._state, state);
     const v = this._render(h);
-    console.table([this._v, v], ['tag', '$el', 'data', 'children']);
+    // console.table([this._v, v], ['tag', '$el', 'data', 'children']);
     if (isUndef(v)) {
       let c = dom.createComment();
       this._root?.replaceWith(c);
@@ -92,8 +98,11 @@ export function $createApp(options: BuildOptions) {
   return _instance = new LuxApp(options);
 }
 
-export function getState() {
-  return _instance.getState();
+export function getState(): State;
+export function getState(query: string): Key;
+export function getState(query: Array<Key>): Array<Key>; 
+export function getState(query?: any) {
+  return isDef(_instance) ? _instance.getState(query) : null;
 }
 
 export function getInstance() {

@@ -2,7 +2,22 @@
 import { AnyFunction, Primitive, UndefType } from "../types";
 import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
 
+const whitespacesRE = /^\s*$/;
+
+
 export const isArray = Array.isArray;
+
+export function isEmpty(a: any[]|string) {
+  return isDef(a) && a.length === 0;
+}
+
+export function isUndefOrEmpty(a: any[]|string) {
+  return isUndef(a) || a.length === 0;
+}
+
+export function isBlankString(s: string) {
+  return whitespacesRE.test(s);
+}
 
 export function isString(a: any): a is string {
   return typeof a === 'string';

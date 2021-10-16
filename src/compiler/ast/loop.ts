@@ -1,6 +1,7 @@
 
 import { normalizedArray, flattenArray } from "../../helpers/array";
 import { isString, isUndef } from "../../helpers/is";
+import { trimAll } from "../../helpers/strings";
 import { getState } from "../../lux";
 import { VNode, vnode } from "../../vdom/vnode";
 import { ASTElement, ASTFlags } from "./astelement";
@@ -59,8 +60,7 @@ export function processLoop(ast: ASTElement): Array<VNode> {
 
 export function parseLoop(ast: ASTElement) {
 
-  const exp = String(ast.attrs['loop']).trim();
-
+  const exp = trimAll(ast.attrs.loop);
   const [alias, items] = exp.split(loopSplitRE);
 
 

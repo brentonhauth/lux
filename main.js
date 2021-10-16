@@ -2,10 +2,6 @@
 (function() {
 "use strict";
 
-/** @type {import('./src/h').h} */
-const h = window.Lux.h;
-/** @type {import('./src/h').$if} */
-const $if = window.Lux.$if;
 /** @type {import('./src')} */
 const Lux = window.Lux;
 
@@ -23,7 +19,8 @@ const instance = Lux.$createApp({
       a: true,
       b: false,
       c: true,
-      list: [1, 2, 3, 4, 5, 6]
+      list: [1, 2, 3, 4, 5, 6],
+      str: 'My String',
     }
   },
   render(h) {
@@ -73,6 +70,14 @@ for (let k in checkboxes) {
     instance.$update(state);
   });
 }
+
+const stringInput = document.getElementById('inpString');
+stringInput.value = instance.getState('str');
+stringInput.addEventListener('input', () => {
+  instance.$update({
+    str: stringInput.value
+  });
+});
 
 
 let count = 0;

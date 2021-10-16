@@ -6,13 +6,6 @@ import { $render } from "./render";
 import { VNode, VNodeChildren } from "./vnode";
 
 const removePatch: PatchFunction = $el => void $el.remove();
-
-export enum PatchFlags {
-  ADDED = 1,
-  REMOVED = 2,
-  REPLACED = 4,
-  UPDATED = 8,
-};
 // <></>
 
 export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
@@ -145,7 +138,7 @@ function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): P
   let old = arrayWrap(oldChildren);
   let _new = arrayWrap(newChildren);
 
-  console.table([old, _new]);
+  // console.table([old, _new]);
 
   const childrenPatches: PatchFunction[] = [];
   const removes: Array<{i:number}> = [];
@@ -160,7 +153,6 @@ function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): P
     // -- nodes are being patched out ($el.remove()) and therefore "i"
     // is pointing to an empty element 
     childrenPatches.push($parent => {
-      console.log('PARENT::', $parent);
       if (isUndef($parent)) {
         console.log('UNDEF PARENT::', old[i], _new[i]);
       }

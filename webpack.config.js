@@ -27,4 +27,9 @@ module.exports = {
     filename: `lux.${ENV}.js`,
     path: path.resolve(__dirname, 'build'),
   },
+  devServer: {
+    port: 8000,
+    hot: true,
+    static: __dirname
+  }
 };

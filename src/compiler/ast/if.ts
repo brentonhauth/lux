@@ -17,7 +17,6 @@ export function processIf(ast: ASTElement) {
   const state = getState();
   while (isDef(ast?.if)) {
     if (state[ast.if.exp]) { // temporary
-      console.log('CORRECT IF STATEMENT', ast.if.exp);
       return ast;
     } else {
       ast = ast.if.next;

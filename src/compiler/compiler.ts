@@ -1,22 +1,30 @@
 
-import { isDef, isUndef } from "../helpers/is";
+import { isBlankString, isDef, isUndef } from "../helpers/is";
+import { trimAll } from "../helpers/strings";
 import { VNodeAttrs } from "../vdom/vnode";
-import { ASTElement, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
+import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
 
 const ignoreAttrs = ['class', 'style', 'loop', 'if', 'elif', 'else'];
+const functionalAttrs = ['loop', 'if', 'elif', 'else'];
+
+const stringExpRE = /\s*\{\{\s*[_a-z$]+[\w$]*\s*\}\}\s*/i;
 const bindingRE = /^:/g;
-const whitespacesRE = /^\s*$/;
 
 export function compileFromDOM(el: Element|Node): ASTNode {
-  return _compileFromDOM(el);
+  return _compileFromDOM(el)
 }
 
 function _compileFromDOM(el: Element|Node): ASTNode {
   let ast: ASTNode;
   if (el.nodeType === Node.TEXT_NODE) {
-    ast = whitespacesRE.test(el.textContent) ? null
-      : new ASTText(el, el.textContent);
+    if (isBlankString(el.textContent)) {
+      return null;
+    } else if (stringExpRE.test(el.textContent)) {
+      return new ASTExpression(el, el.textContent);
+    } else {
+      return new ASTText(el, el.textContent);
+    }
   } else if (el.nodeType === Node.ELEMENT_NODE) {
     const elm = <Element>el, attrNames = elm.getAttributeNames();
     const attrs: VNodeAttrs = {}, children: Array<ASTNode> = [];
@@ -25,16 +33,14 @@ function _compileFromDOM(el: Element|Node): ASTNode {
     let prev: ASTElement = null;
 
     for (let name of attrNames) {
-      name = name.toLowerCase();
       attrs[name] = elm.getAttribute(name);
       if (bindingRE.test(name)) {
         flags |= ASTFlags.BIND;
         // TODO: Add bindings to list
       }
     }
-    for (let i = 0; i < elm.childNodes.length; i++) {
-      const node = elm.childNodes[i];
-      const compiled = compileFromDOM(node);
+    for (let i = 0; i < elm.childNodes.length; ++i) {
+      const compiled = compileFromDOM(elm.childNodes[i]);
       if (isUndef(compiled)) {
         continue;
       } else if (compiled.type !== ASTType.ELEMENT) {
@@ -44,34 +50,36 @@ function _compileFromDOM(el: Element|Node): ASTNode {
       }
 
       const child = <ASTElement>compiled;
-      if (isDef(child.attrs['if'])) {
+      const childAttrs = child.attrs;
+
+      if (isDef(childAttrs.if)) {
         inIf = true;
         child.flags |= ASTFlags.IF;
         child.if = {
-          exp: String(child.attrs['if']),
+          exp: trimAll(childAttrs.if),
           next: null,
         };
-        sanitizeUniqueAttrs(prev = child, 'if');
+        sanitizeFunctoinalAttrs(prev = child, 'if');
         children.push(child);
-      } else if (inIf && isDef(child.attrs['elif'])) {
+      } else if (inIf && isDef(childAttrs.elif)) {
         child.flags |= ASTFlags.ELIF;
         prev.if.next = child;
         child.if = {
-          exp: String(child.attrs['elif']),
+          exp: trimAll(childAttrs.elif),
           next: null,
         };
-        sanitizeUniqueAttrs(prev = child, 'elif');
-      } else if (inIf && isDef(child.attrs['else'])) {
+        sanitizeFunctoinalAttrs(prev = child, 'elif');
+      } else if (inIf && isDef(childAttrs.else)) {
         prev.if.next = child;
         child.flags |= ASTFlags.ELSE;
-        sanitizeUniqueAttrs(child, 'else');
+        sanitizeFunctoinalAttrs(child, 'else');
         inIf = false;
         prev = null;
       } else {
         inIf = false;
-        if (isDef(child.attrs['loop'])) {
+        if (isDef(childAttrs['loop'])) {
           parseLoop(child);
-          sanitizeUniqueAttrs(child, 'loop');
+          sanitizeFunctoinalAttrs(child, 'loop');
         }
         children.push(child);
       }
@@ -83,9 +91,8 @@ function _compileFromDOM(el: Element|Node): ASTNode {
   return ast;
 }
 
-function sanitizeUniqueAttrs(el: ASTElement, keep: string) {
-  const unique = ['loop', 'if', 'elif', 'else'];
-  for (let u of unique) {
+function sanitizeFunctoinalAttrs(el: ASTElement, keep: string) {
+  for (let u of functionalAttrs) {
     if (u !== keep && u in el.attrs) {
       console.warn(`Cannot have "${u}" attribute with "${keep}".`);
       delete el.attrs[u];

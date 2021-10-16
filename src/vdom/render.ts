@@ -24,9 +24,6 @@ function _render(node: Renderable): Element {
 
   node.$el = dom.createElement(node.tag);
   applyAllAttrs(node);
-  if (node.data?.props) {
-    applyAll(node.$el, node.data.props);
-  }
   if (node.data?.style) {
     applyAll((<any>node.$el).style, node.data.style);
   }
@@ -63,9 +60,6 @@ function _render2(node: Renderable): Element {
 
   node.$el = dom.createElement(node.tag);
   applyAllAttrs(node);
-  if (node.data?.props) {
-    applyAll(node.$el, node.data.props);
-  }
   if (node.data?.style) {
     applyAll((<any>node.$el), { style: node.data.style });
   }

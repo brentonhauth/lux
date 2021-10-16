@@ -7,22 +7,28 @@
   <title>Lux3</title>
 </head>
 <body>
-  <button id="PauseBtn">Play</button>
-  <span>
-    <label for="cbA">A</label>
-    <input type="checkbox" id="cbA">
-  </span>&nbsp;
-  <span>
-    <label for="cbB">B</label>
-    <input type="checkbox" id="cbB">
-  </span>&nbsp;
-  <span>
-    <label for="cbC">C</label>
-    <input type="checkbox" id="cbC">
-  </span>
+  <div>
+    <button id="PauseBtn">Play</button>
+    <span>
+      <label for="cbA">A</label>
+      <input type="checkbox" id="cbA" />
+    </span>&nbsp;
+    <span>
+      <label for="cbB">B</label>
+      <input type="checkbox" id="cbB" />
+    </span>&nbsp;
+    <span>
+      <label for="cbC">C</label>
+      <input type="checkbox" id="cbC" />
+    </span>&nbsp;
+    <span>
+      <label for="inpString">String</label>
+      <input type="text" id="inpString" />
+    </span>
+  </div>
   <div id="App">
     <div id="Blue" style="width:200px;height: 50px;background-color: lightblue;">
-      <b if="c">IF="c"</b>
+      <span if="c">IF="c"</span>
       <span if="a">IF!</span>
       <span elif="b">ELSE IF!</span>
       <span else>ELSE!</span>
@@ -30,30 +36,14 @@
     <div style="width:200px;height: 50px;background-color: red;">
       <span loop="i in list" style="width:10px;height:10px;background-color:lightcoral;">I</span>
     </div>
-    <div style="width:200px;height: 50px;background-color: yellow;">Yellow</div>
+    <div style="width:200px;height: 50px;background-color: yellow;">
+      <span>{{ str }}</span>
+    </div>
     <div style="width:200px;height: 50px;background-color: green;">Green</div>
   </div>
 
-  <div id="TEST">
-    <!-- COMMENT -->
-    <span></span>
-  </div>
-
   <!-- Engine Scripts -->
-  <script src="./build/lux.production.js"></script>
-  <!-- <script src="./src/h.js"></script>
-  <script src="./src/lux.js"></script>
-  <script src="./src/types.js"></script>
-  <script src="./src/compiler/compiler.js"></script>
-  <script src="./src/compiler/ast/astelement.js"></script>
-  <script src="./src/compiler/ast/if.js"></script>
-  <script src="./src/compiler/ast/loop.js"></script>
-  <script src="./src/helpers/dom.js"></script>
-  <script src="./src/helpers/functions.js"></script>
-  <script src="./src/helpers/is.js"></script>
-  <script src="./src/vdom/vnode.js"></script>
-  <script src="./src/vdom/render.js"></script>
-  <script src="./src/vdom/patch.js"></script> -->
+  <script src="./build/lux.development.js"></script>
 
   <!-- Test Scripts -->
   <script src="./main.js"></script>
