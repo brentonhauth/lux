@@ -42,11 +42,11 @@ export abstract class ASTNode {
 
   public get id() { return this.#id; }
 
-  prevSibling(): ASTNode {
+  prevSibling(): ASTNode|null {
     return this.getSibling(-1);
   }
 
-  nextSibling(): ASTNode {
+  nextSibling(): ASTNode|null {
     return this.getSibling(+1);
   }
   

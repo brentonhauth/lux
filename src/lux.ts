@@ -1,4 +1,4 @@
-/// <reference path="./vdom/patch.ts" />
+// <reference path="./vdom/patch.ts" />
 
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';

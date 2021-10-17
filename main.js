@@ -1,5 +1,5 @@
 /// <references path="./src/*" />
-(function() {
+setTimeout(function() {
 "use strict";
 
 /** @type {import('./src')} */
@@ -92,4 +92,4 @@ setInterval(() => {
 }, 2500);
 
 
-})();
+}, 500);//temporary
