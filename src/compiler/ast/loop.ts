@@ -41,7 +41,7 @@ export function processLoop(ast: ASTElement, state?: State): Array<VNode> {
 
   const children = normalizedArray(ast.children).map(c => c.toVNode(state));
   const v = vnode(ast.tag, {
-    attrs: ast.normalizedAttrs(),
+    attrs: ast.normalizedAttrs(state),
     style: ast.style,
   }, <any>flattenArray(children));
 

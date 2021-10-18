@@ -3,13 +3,13 @@ import { arrayWrap, normalizedArray } from "../helpers/array";
 import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { ArrayOrSingle } from "../types";
 
-export enum VNodeCloneFlags {
+export const enum VNodeCloneFlags {
   DEEP = 1,
   ELEMENT = 2,
   DEFAULT = DEEP|0,
 };
 
-export enum VNodeFlags {
+export const enum VNodeFlags {
   STATIC = 1,
   TEXT = 2,
   COMMENT = 4,

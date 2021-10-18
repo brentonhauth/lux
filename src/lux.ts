@@ -2,6 +2,7 @@
 
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';
+import { parseStatement } from './compiler/parser';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
@@ -10,8 +11,6 @@ import { ArrayOrSingle, Key, State } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
-
-console.log('NEW');
 
 type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
 type DataFn = () => Record<Key, any>;
@@ -34,7 +33,6 @@ class LuxApp {
   private _state: Record<string, any>;
 
   constructor(options: BuildOptions) {
-    console.log('Contructor...');
     LuxApp._instance = this;
     this._options = options;
     this._render = options.render?.bind(this);
@@ -65,7 +63,6 @@ class LuxApp {
   }
 
   $update(state: Record<string, any>): LuxApp {
-    console.log('Apply::', this._state, state);
     applyAll(this._state, state);
     const v = this._render(h);
     // console.table([this._v, v], ['tag', '$el', 'data', 'children']);
@@ -107,14 +104,7 @@ export function getState(): State;
 export function getState(query: string): Key;
 export function getState(query: Array<Key>): Array<Key>;
 export function getState(query?: any) {
-  const state = isDef(LuxApp._instance) ? LuxApp._instance.getState(query) : null;
-  if (isDef(LuxApp._instance)) {
-    console.log('INSTANCE IS DEF');
-  } else {
-    console.log('INSTANCE IS NOT DEF!!!');
-  }
-  console.log(state);
-  return state;
+  return isDef(LuxApp._instance) ? LuxApp._instance.getState(query) : null;
 }
 
 export function getInstance() {
@@ -126,7 +116,8 @@ export function getInstance() {
 const Lux = {
   $createApp,
   getState,
-  getInstance
+  getInstance,
+  parseStatement,
 };
 
 (<any>globalThis).Lux = Lux;

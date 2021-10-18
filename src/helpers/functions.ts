@@ -1,8 +1,8 @@
-import { Key } from "../types";
+import { Key, Primitive, State } from "../types";
 import { VNode, VNodeAttrs } from "../vdom/vnode";
 import { arrayWrap } from "./array";
 import { dom } from "./dom";
-import { isDef, isFunc, isObject, isUndef, isVNode } from "./is";
+import { isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
 
 export function forIn(object: any, fn: (k: Key, v: any) => void) {
   for (let i in object) {
@@ -53,4 +53,13 @@ export function applyAllAttrs(node: Element|VNode, attrs?: VNodeAttrs) {
       dom.setAttr(el, String(k), v);
     }
   });
+}
+
+export function lookup(name: string|number|any|symbol, state: State, additional?: State) {
+  if (isObjectLike(additional) && (name in additional)) {
+    return additional[name];
+  } else if (isObjectLike(state) && (name in state)) {
+    return state[name];
+  }
+  return null;
 }

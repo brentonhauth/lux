@@ -3,6 +3,7 @@ import { AnyFunction, Primitive, UndefType } from "../types";
 import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
 
 const whitespacesRE = /^\s*$/;
+const validVarRE = /^[_a-z$]+[\w$]*$/i;
 
 
 export const isArray = Array.isArray;
@@ -19,12 +20,20 @@ export function isBlankString(s: string) {
   return whitespacesRE.test(s);
 }
 
+export function isValidVariable(a: string) {
+  return validVarRE.test(a);
+}
+
 export function isString(a: any): a is string {
   return typeof a === 'string';
 }
 
 export function isNumber(a: any): a is number {
   return typeof a === 'number';
+}
+
+export function isBoolean(a: any): a is boolean {
+  return typeof a === 'boolean';
 }
 
 export function isPrimitive(a: any): a is Primitive {

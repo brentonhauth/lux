@@ -75,7 +75,7 @@ export class ASTElement extends ASTNode {
   public watching?: Array<string>;
   public bindings?: Record<string, string>;
 
-  constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
+  constructor(el: Element, tag: string, attrs: Record<string,{bind:string}|Primitive>, children: ArrayOrSingle<ASTNode>) {
     super(el, ASTType.ELEMENT);
     this.tag = tag;
     this.style = <any>attrs.style;
@@ -102,20 +102,23 @@ export class ASTElement extends ASTNode {
     }
   }
 
-  normalizedAttrs() {
+  normalizedAttrs(state: State, additional:State={}) {
+    state = state || getState();
     const attrs: VNodeAttrs = {};
     for (let name in this.attrs) {
       let attr = this.attrs[name];
       if (isPrimitive(attr)) {
         attrs[name] = attr;
       } else {
-        attrs[name] = getState(attr.bind);
+        attrs[name] = attr.bind in additional
+          ? additional[attr.bind]
+          : state[attr.bind];
       }
     }
     return attrs;
   }
 
-  toVNode(state?: State): ArrayOrSingle<VNode> {
+  toVNode(state?: ArrayOrSingle<State>): ArrayOrSingle<VNode> {
     let v: VNode, ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
       ast = processIf(ast, state);
@@ -140,7 +143,7 @@ export class ASTElement extends ASTNode {
 
 
     v = vnode(ast.tag, {
-      attrs: ast.normalizedAttrs(),
+      attrs: ast.normalizedAttrs(state),
       style: ast.style,
     }, <any>flattenArray(children));
     // v.$el = <Element>this.$el;
