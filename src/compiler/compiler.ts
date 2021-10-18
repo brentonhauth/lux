@@ -1,15 +1,18 @@
-
 import { isBlankString, isDef, isUndef } from "../helpers/is";
-import { trimAll } from "../helpers/strings";
-import { VNodeAttrs } from "../vdom/vnode";
+import { lower, trimAll } from "../helpers/strings";
+import { Reference, ref } from "../helpers/ref";
+import { VNodeAttrs, VNodeEvents } from "../vdom/vnode";
 import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
+import { warn } from "../core/logging";
 
 const ignoreAttrs = ['class', 'style', 'loop', 'if', 'elif', 'else'];
 const functionalAttrs = ['loop', 'if', 'elif', 'else'];
 
 const stringExpRE = /\s*\{\{\s*[_a-z$]+[\w$]*\s*\}\}\s*/i;
 const bindingRE = /^:/g;
+const eventRE = /^@/g;
+
 
 export function compileFromDOM(el: Element|Node): ASTNode {
   return _compileFromDOM(el)
@@ -28,14 +31,14 @@ function _compileFromDOM(el: Element|Node): ASTNode {
   } else if (el.nodeType === Node.ELEMENT_NODE) {
     const elm = <Element>el, attrNames = elm.getAttributeNames();
     const attrs: VNodeAttrs = {}, children: Array<ASTNode> = [];
-    let flags = 0; // default
+    let flags = ref(0);
     let inIf = false;
     let prev: ASTElement = null;
 
     for (let name of attrNames) {
       attrs[name] = elm.getAttribute(name);
       if (bindingRE.test(name)) {
-        flags |= ASTFlags.BIND;
+        flags.value |= ASTFlags.BIND;
         // TODO: Add bindings to list
       }
     }
@@ -86,18 +89,54 @@ function _compileFromDOM(el: Element|Node): ASTNode {
 
     }
     ast = new ASTElement(elm, elm.tagName, attrs, children);
-    ast.flags |= flags;
+    ast.flags |= flags.value;
   }
   return ast;
+}
+
+function compileAttrs(el: Element, flags: Reference<number>) {
+  const attrNames = el.getAttributeNames();
+  const attrs: Record<string, {bind:string}|string> = {};
+  const events: VNodeEvents = {};
+
+  for (let name of attrNames) {
+    if (bindingRE.test(name)) {
+      let attr = normalizeBinding(el, name);
+      if (functionalAttrs.includes(lower(attr.name))) {
+        warn(`Cannot bind "${attr.name}"`);
+      }
+      attrs[attr.name] = { bind: attr.value };
+      flags.value |= ASTFlags.BIND;
+      // TODO: Add bindings to list
+    } else if (eventRE.test(name)) {
+      normalizeEvent(el, name);
+    } else {
+      attrs[name] = el.getAttribute(name);
+    }
+  }
+
+  return { attrs, events };
+}
+
+function normalizeBinding(el: Element, attr: string) {
+  const value = trimAll(el.getAttribute(attr));
+  const name = attr.slice(1).toLowerCase();
+  el.setAttribute(name, value);
+  el.removeAttribute(attr);
+  return { name, value };
+}
+
+function normalizeEvent(el: Element, event: string) {
+  warn('Events not yet implemented');
 }
 
 function sanitizeFunctoinalAttrs(el: ASTElement, keep: string) {
   for (let u of functionalAttrs) {
     if (u !== keep && u in el.attrs) {
-      console.warn(`Cannot have "${u}" attribute with "${keep}".`);
+      warn(`Cannot have "${u}" attribute with "${keep}".`);
       delete el.attrs[u];
     } else if (isDef(el.attrs[`:${u}`])) {
-      console.warn(`"${u}" is not meant to be bound!`);
+      warn(`"${u}" is not meant to be bound!`);
       delete el.attrs[u];
     }
   }

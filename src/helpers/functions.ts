@@ -1,4 +1,4 @@
-import { Key, Reference } from "../types";
+import { Key } from "../types";
 import { VNode, VNodeAttrs } from "../vdom/vnode";
 import { arrayWrap } from "./array";
 import { dom } from "./dom";
@@ -29,20 +29,6 @@ export function callFn<T>(obj: any, name: string, params?: any[], default0?: T):
       : default0;
   }
   return default0;
-}
-
-export function ref<T>(value?:T): Reference<T> {
-  // TODO: Link references
-  return {
-    value,
-    __isRef: true,
-    get() {
-      return this.value;
-    },
-    set(value:T) {
-      this.value = value;
-    },
-  };
 }
 
 export function noop() {}

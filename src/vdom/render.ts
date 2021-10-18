@@ -1,4 +1,3 @@
-
 import { dom } from "../helpers/dom";
 import { applyAll, applyAllAttrs } from "../helpers/functions";
 import { arrayWrap } from "../helpers/array";

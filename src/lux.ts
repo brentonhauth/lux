@@ -11,6 +11,7 @@ import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
 
+console.log('NEW');
 
 type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
 type DataFn = () => Record<Key, any>;
@@ -23,6 +24,7 @@ interface BuildOptions {
 let _instance: LuxApp = null;
 
 class LuxApp {
+  static _instance: LuxApp;
   private _options: BuildOptions;
   private _root: Element;
   private _v: VNode;
@@ -32,11 +34,13 @@ class LuxApp {
   private _state: Record<string, any>;
 
   constructor(options: BuildOptions) {
+    console.log('Contructor...');
+    LuxApp._instance = this;
     this._options = options;
     this._render = options.render?.bind(this);
     this._data = options.data?.bind(this) || noop;
     this._options.render = <any>noop;
-    this._state = {};
+    this._state = options.data?.() || {};
     this._root = null;
     this._v = null;
   }
@@ -61,6 +65,7 @@ class LuxApp {
   }
 
   $update(state: Record<string, any>): LuxApp {
+    console.log('Apply::', this._state, state);
     applyAll(this._state, state);
     const v = this._render(h);
     // console.table([this._v, v], ['tag', '$el', 'data', 'children']);
@@ -88,26 +93,35 @@ class LuxApp {
     this._root = el;
     // this._v = vnode(el.tagName, );
     this._ast = <ASTElement>compileFromDOM(el);
-    this._render = () => <VNode>this._ast.toVNode();
-    this.$update(this._data());
+    this._render = () => <VNode>this._ast.toVNode(getState());
+    this.$update(this._state);
     return this;
   }
 }
 
 export function $createApp(options: BuildOptions) {
-  return _instance = new LuxApp(options);
+  return new LuxApp(options);
 }
 
 export function getState(): State;
 export function getState(query: string): Key;
-export function getState(query: Array<Key>): Array<Key>; 
+export function getState(query: Array<Key>): Array<Key>;
 export function getState(query?: any) {
-  return isDef(_instance) ? _instance.getState(query) : null;
+  const state = isDef(LuxApp._instance) ? LuxApp._instance.getState(query) : null;
+  if (isDef(LuxApp._instance)) {
+    console.log('INSTANCE IS DEF');
+  } else {
+    console.log('INSTANCE IS NOT DEF!!!');
+  }
+  console.log(state);
+  return state;
 }
 
 export function getInstance() {
-  return _instance;
+  return LuxApp._instance;
 }
+
+// loopIt();
 
 const Lux = {
   $createApp,

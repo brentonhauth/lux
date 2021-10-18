@@ -31,8 +31,7 @@ export function isPrimitive(a: any): a is Primitive {
   return (
     typeof a === 'string' ||
     typeof a === 'number' ||
-    typeof a === 'boolean' ||
-    typeof a === 'symbol'
+    typeof a === 'boolean'
   );
 }
 

@@ -1,7 +1,8 @@
 import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
-import { isBlankString, isDef, isUndef, isUndefOrEmpty } from "../../helpers/is";
+import { isBlankString, isDef, isPrimitive, isUndef, isUndefOrEmpty } from "../../helpers/is";
 import { trimAll } from "../../helpers/strings";
-import { ArrayOrSingle } from "../../types";
+import { getState } from "../../lux";
+import { ArrayOrSingle, Primitive, State } from "../../types";
 import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
 import { processExpression } from "./expression";
 import { IfCondition, processIf } from "./if";
@@ -9,13 +10,13 @@ import { LoopCondition, processLoop } from "./loop";
 
 let AST_ID = 0;
 
-export enum ASTType {
+export const enum ASTType {
   ELEMENT = 1,
   EXPRESSION = 2,
   TEXT = 3,
 }
 
-export enum ASTFlags {
+export const enum ASTFlags {
   IF = 1,
   ELSE = 2,
   ELIF = IF|ELSE,
@@ -56,7 +57,7 @@ export abstract class ASTNode {
     return this.parent.children[index + offset];
   }
 
-  public abstract toVNode(): ArrayOrSingle<VNode>;
+  public abstract toVNode(state?: State): ArrayOrSingle<VNode>;
   public markIfStatic() {
     if (this.type === ASTType.TEXT) {
       this.flags |= ASTFlags.STATIC;
@@ -66,12 +67,13 @@ export abstract class ASTNode {
 
 export class ASTElement extends ASTNode {
   public tag: string;
-  public attrs: VNodeAttrs;
+  public attrs: Record<string,{bind:string}|Primitive>;
   public style: VNodeStyle;
   public children: Array<ASTNode>;
   public if?: IfCondition;
   public loop?: LoopCondition;
   public watching?: Array<string>;
+  public bindings?: Record<string, string>;
 
   constructor(el: Element, tag: string, attrs: VNodeAttrs, children: ArrayOrSingle<ASTNode>) {
     super(el, ASTType.ELEMENT);
@@ -100,17 +102,30 @@ export class ASTElement extends ASTNode {
     }
   }
 
-  toVNode(): ArrayOrSingle<VNode> {
+  normalizedAttrs() {
+    const attrs: VNodeAttrs = {};
+    for (let name in this.attrs) {
+      let attr = this.attrs[name];
+      if (isPrimitive(attr)) {
+        attrs[name] = attr;
+      } else {
+        attrs[name] = getState(attr.bind);
+      }
+    }
+    return attrs;
+  }
+
+  toVNode(state?: State): ArrayOrSingle<VNode> {
     let v: VNode, ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
-      ast = processIf(ast);
+      ast = processIf(ast, state);
       if (isUndef(ast)) {
         v = vnode.comment('[IF]');
         // v.$el = <Element>this.$el;
         return v;
       }
     } else if (ast.flags & ASTFlags.LOOP) {
-      let looped = processLoop(ast);
+      let looped = processLoop(ast, state);
       if (looped.length === 0) {
         v = vnode.comment('[LOOP]');
         // v.$el = <Element>this.$el;
@@ -121,10 +136,11 @@ export class ASTElement extends ASTNode {
       }
     }
 
-    const children = normalizedArray(ast.children).map(c => c.toVNode());
+    const children = normalizedArray(ast.children).map(c => c.toVNode(state));
+
 
     v = vnode(ast.tag, {
-      attrs: ast.attrs,
+      attrs: ast.normalizedAttrs(),
       style: ast.style,
     }, <any>flattenArray(children));
     // v.$el = <Element>this.$el;
@@ -142,10 +158,10 @@ export class ASTExpression extends ASTNode {
     [this.alias] = arrayWrap(this.exp.match(/[_a-z$]+[\w$]*/ig));
   }
 
-  toVNode(): VNode {
+  toVNode(state?: State): VNode {
     let v: VNode;
     if (!isUndefOrEmpty(this.alias)) {
-      v = processExpression(this);
+      v = processExpression(this, state);
     } else {
       v = vnode.text('');
     }
