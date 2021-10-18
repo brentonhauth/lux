@@ -1,6 +1,7 @@
 
 import { normalizedArray, flattenArray } from "../../helpers/array";
-import { isString, isUndef } from "../../helpers/is";
+import { lookup } from "../../helpers/functions";
+import { isDef, isString, isUndef } from "../../helpers/is";
 import { trimAll } from "../../helpers/strings";
 import { getState } from "../../lux";
 import { State } from "../../types";
@@ -17,7 +18,7 @@ export interface LoopCondition {
   iterator?: string;
 }
 
-export function processLoop(ast: ASTElement, state?: State): Array<VNode> {
+export function processLoop(ast: ASTElement, state?: State, additional:State={}): Array<VNode> {
   if (isUndef(ast.loop)) {
     console.warn('Is not loop');
     return [];
@@ -30,7 +31,7 @@ export function processLoop(ast: ASTElement, state?: State): Array<VNode> {
     return [];
   }
 
-  let list: Array<any> = state[items];
+  let list: Array<any> = lookup(items, state, additional);
 
   if (isString(list)) {
     list = list.split('');
@@ -39,21 +40,26 @@ export function processLoop(ast: ASTElement, state?: State): Array<VNode> {
     return [];
   }
 
-  const children = normalizedArray(ast.children).map(c => c.toVNode(state));
-  const v = vnode(ast.tag, {
-    attrs: ast.normalizedAttrs(state),
-    style: ast.style,
-  }, <any>flattenArray(children));
-
   const output = [];
-  let first = true;
   for (let i in list) {
-    if (first) {
-      first = false;
-      output.push(v);
-    } else {
-      output.push(vnode.clone(v));
-    }
+    let more = { ...additional };
+    more[alias] = list[i];
+    // if (isDef(v)) {
+    //   output.push(vnode.clone(v));
+    // } else {
+    //   first = false;
+    //   v = vnode(ast.tag, {
+    //     attrs: ast.normalizedAttrs(state, additional),
+    //     style: ast.style,
+    //   }, <any>flattenArray(children));
+    //   output.push(v);
+    // }
+    let children = normalizedArray(ast.children).map(c => c.toVNode(state, more));
+    let v = vnode(ast.tag, {
+      attrs: ast.normalizedAttrs(state, more),
+      style: ast.style,
+    }, <any>children);
+    output.push(v);
   }
   return output;
 }

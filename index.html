@@ -32,12 +32,16 @@
       <span if="a">IF!</span>
       <span elif="b">ELSE IF!</span>
       <span else>ELSE!</span>
+      <div if="a === b">a equals b</div>
+      <div else>a does not equal b</div>
     </div>
     <div style="width:200px;height: 50px;background-color: red;">
-      <span loop="i in list" style="width:10px;height:10px;background-color:lightcoral;">I</span>
+      <span loop="i in list" style="margin:5px;width:10px;height:10px;background-color:lightcoral;">
+        {{ i == 4 ? 'four' : i }}
+      </span>
     </div>
     <div style="width:200px;height: 50px;background-color: yellow;">
-      <span>{{ str }}</span>
+      <span>{{ str == 3 }}</span>
     </div>
     <div style="width:200px;height: 50px;background-color: green;" :test="str">Green</div>
   </div>

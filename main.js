@@ -21,6 +21,7 @@ const instance = Lux.$createApp({
       c: true,
       list: [1, 2, 3, 4, 5, 6],
       str: 'My String',
+      num: 20,
     }
   },
   render(h) {
@@ -74,8 +75,10 @@ for (let k in checkboxes) {
 const stringInput = document.getElementById('inpString');
 stringInput.value = instance.getState('str');
 stringInput.addEventListener('input', () => {
+  const value = stringInput.value;
   instance.$update({
-    str: stringInput.value
+    str: value,
+    list: value.split(/\s+/)
   });
 });
 

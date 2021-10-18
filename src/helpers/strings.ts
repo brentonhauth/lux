@@ -1,6 +1,7 @@
 import { isString } from "./is";
 
 const twoPlusSpacesRE = /\s{2,}/;
+const removeDoubleCurlsRE = /^\{\{\s*(?<exp>.*)\s*\}\}$/;
 
 const EMPTY_STRING = '';
 const WHITE_SPACE = '\x20';
@@ -49,4 +50,14 @@ export function stripQuotes(s: string) {
   } else {
     return s;
   }
+}
+
+export function stripDoubleCurls(s: string) {
+  const t = s.trim();
+  if (t.length < 4) {
+    // Invalid
+    return s;
+  }
+  const result = removeDoubleCurlsRE.exec(t);
+  return result?.groups?.exp;
 }

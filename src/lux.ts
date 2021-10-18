@@ -2,7 +2,7 @@
 
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';
-import { parseStatement } from './compiler/parser';
+import { evalStatement, parseStatement } from './compiler/parser';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
@@ -118,6 +118,7 @@ const Lux = {
   getState,
   getInstance,
   parseStatement,
+  evalStatement,
 };
 
 (<any>globalThis).Lux = Lux;

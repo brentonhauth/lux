@@ -26,7 +26,7 @@ export const enum StatementType {
 }
 
 const containsQuoteRE = /("|'|`)/g;
-const splitCompOpsRE = /(?:>|<|!=|==)=?/g;
+const splitCompOpsRE = /(?:>|<|!=|==)=?/;
 
 type ExpFn = (state?: State, additional?: State) => any;
 
@@ -60,7 +60,7 @@ export interface Statement {
   val: ExpFn|BasicType|OperationArray,
 }
 
-export function evaluateStatement(statement: Statement, state: State, additional?: State) {
+export function evalStatement(statement: Statement, state: State, additional?: State) {
   const { type } = statement;
 
   if (type & StatementType.SINGLE) {
@@ -68,7 +68,7 @@ export function evaluateStatement(statement: Statement, state: State, additional
     return type === StatementType.STRAIGHT_LOOKUP
       ? lookup(value, state, additional) : value;
   } else if (type & StatementType.COMPLEX) {
-    let fn = <ExpFn>statement.val;
+    let fn = (<ExpFn>statement.val).bind({...state, ...additional});
     return fn(state, additional);
   }
 
@@ -130,52 +130,43 @@ function createComplex(exp: string): Statement {
 
 
 function tryForSimple(exp: string): Statement {
+  function simpleCastWrap(val: string, cast: Reference<BasicType|Statement>) {
+    if (checkIfCastable(val=stripParens(val), <Reference<BasicType>>cast, false)) {
+      return true;
+    } else if (isValidVariable(val)) {
+      cast.set(val);
+      return false;
+    }
+    throw StatementType.COMPLEX;
+  }
   const op = <ComparisonOp>arrayUnwrap(splitCompOpsRE.exec(exp));
+  console.log(`OP: ${op}  exec: ${splitCompOpsRE.exec(exp)}`);
   if (isUndef(op) || !(op in comparisonOps)) {
-    return createComplex(exp);
+    throw StatementType.COMPLEX;
   }
 
   const vals = exp.split(splitCompOpsRE);
   if (vals.length !== 2) {
-    return createComplex(exp);
+    throw StatementType.COMPLEX;
   }
 
-  const left = stripParens(vals[0]), lcast = ref<BasicType>();
-  const leftIsCast = checkIfCastable(left, lcast, false);
-  if (!leftIsCast && !isValidVariable(left)) {
-    throw new Error(`Invalid variable "${left}"`);
-  }
+  const left = ref<BasicType>();
+  const leftIsCast = simpleCastWrap(vals[0], left);
+  const right = ref<BasicType>();
+  const rightIsCast = simpleCastWrap(vals[1], right);
   
-  const right = stripParens(vals[1]), rcast = ref<BasicType>();
-  const rightIsCast = checkIfCastable(right, rcast, false);
-  if (!rightIsCast && !isValidVariable(right)) {
-    throw new Error(`Invalid variable "${right}"`);
-  }
-
-  const comp = comparisonOps[<ComparisonOp>op];
-
-  if (leftIsCast) {
-    if (rightIsCast) {
-      return {
-        type: StatementType.STRAIGHT_CAST,
-        val: comp(lcast.value, rcast.value),
-      };
-    } else {
-      return {
-        type: StatementType.LEFT_CAST|StatementType.RIGHT_LOOKUP,
-        val: [lcast.value, op, right]// (state, more) => comp(lcast.value, lookup(right, state, more))
-      };
-    }
-  } else if (rightIsCast) {
+  if (leftIsCast && rightIsCast) {
+    const comp = comparisonOps[<ComparisonOp>op];
     return {
-      type: StatementType.LEFT_LOOKUP|StatementType.RIGHT_CAST,
-      val: [left, op, rcast.value]
+      type: StatementType.STRAIGHT_CAST,
+      val: comp(left.value, right.value),
     };
   } else {
-    return {
-      type: StatementType.LOOKUP,
-      val: [left, op, right]
-    };
+    let type = leftIsCast ? StatementType.LEFT_CAST : StatementType.LEFT_LOOKUP;
+    type |= rightIsCast ? StatementType.RIGHT_CAST : StatementType.RIGHT_LOOKUP;
+
+    const val: OperationArray = [left.value, op, right.value];
+    return { type, val };
   }
 }
 
@@ -200,7 +191,15 @@ export function parseStatement(exp: string): Statement {
       val: exp
     };
   } else {
-    return tryForSimple(exp);
+    try {
+      return tryForSimple(exp);
+    } catch (e) {
+      if (e === StatementType.COMPLEX) {
+        return createComplex(exp);
+      } else {
+        throw e;
+      }
+    }
   }
 
 }

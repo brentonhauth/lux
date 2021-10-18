@@ -5,10 +5,11 @@ import { VNodeEvents } from "../vdom/vnode";
 import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
 import { warn } from "../core/logging";
+import { parseStatement } from "./parser";
 
 const functionalAttrs = ['loop', 'if', 'elif', 'else'];
 
-const stringExpRE = /\s*\{\{\s*[_a-z$]+[\w$]*\s*\}\}\s*/i;
+const stringExpRE = /^\s*\{\{\s*(.+)*\s*\}\}\s*$/;
 const bindingRE = /^:/g;
 const eventRE = /^@/g;
 
@@ -50,21 +51,12 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
 
       if (isDef(childAttrs.if)) {
         inIf = true;
-        child.flags |= ASTFlags.IF;
-        child.if = {
-          exp: trimAll(childAttrs.if),
-          next: null,
-        };
-        sanitizeFunctoinalAttrs(prev = child, 'if');
+        addIfStatement(prev = child, 'if');
         children.push(child);
       } else if (inIf && isDef(childAttrs.elif)) {
-        child.flags |= ASTFlags.ELIF;
         prev.if.next = child;
-        child.if = {
-          exp: trimAll(childAttrs.elif),
-          next: null,
-        };
-        sanitizeFunctoinalAttrs(prev = child, 'elif');
+        addIfStatement(prev = child, 'elif');
+        child.flags |= ASTFlags.ELIF;
       } else if (inIf && isDef(childAttrs.else)) {
         prev.if.next = child;
         child.flags |= ASTFlags.ELSE;
@@ -73,7 +65,7 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
         prev = null;
       } else {
         inIf = false;
-        if (isDef(childAttrs['loop'])) {
+        if (isDef(childAttrs.loop)) {
           parseLoop(child);
           sanitizeFunctoinalAttrs(child, 'loop');
         }
@@ -86,6 +78,14 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
     ast.flags |= flags.value;
   }
   return ast;
+}
+
+function addIfStatement(ast: ASTElement, attr: string) {
+  const raw = String(ast.attrs[attr]).trim();
+  const exp = parseStatement(raw);
+  ast.if = { raw, exp, next: null };
+  ast.flags |= ASTFlags.IF;
+  sanitizeFunctoinalAttrs(ast, attr);
 }
 
 function compileAttrs(el: Element, flags: Reference<number>) {

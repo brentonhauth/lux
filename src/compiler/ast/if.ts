@@ -1,15 +1,16 @@
 import { isDef, isUndef } from "../../helpers/is";
 import { getState } from "../../lux";
-import { IfStatement, State } from "../../types";
+import { State } from "../../types";
+import { evalStatement, Statement } from "../parser";
 import { ASTElement } from "./astelement";
 
 export interface IfCondition {
-  exp?: string;
-  fn?: IfStatement;
+  raw?: string;
+  exp?: Statement;
   next?: ASTElement;
 }
 
-export function processIf(ast: ASTElement, state?: State) {
+export function processIf(ast: ASTElement, state?: State, additional?: State) {
   if (isUndef(ast.if)) {
     return null;
   }
@@ -17,7 +18,7 @@ export function processIf(ast: ASTElement, state?: State) {
   state = state || getState();
 
   while (isDef(ast?.if)) {
-    if (isDef(state) && state[ast.if.exp]) { // temporary
+    if (evalStatement(ast.if.exp, state, additional)) {
       return ast;
     } else {
       ast = ast.if.next;
