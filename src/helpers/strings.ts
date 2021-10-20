@@ -1,14 +1,22 @@
-import { isString } from "./is";
+import { isString, isUndefOrEmpty } from "./is";
 
 const twoPlusSpacesRE = /\s{2,}/;
 const removeDoubleCurlsRE = /^\{\{\s*(?<exp>.*)\s*\}\}$/;
 
+
+export const enum CharCode {
+  LEFT_PAREN = 0x28, // (
+  RIGHT_PAREN = 0x29, // )
+  QUOTE = 0x22, // "
+  APOS = 0x27, // '
+  TICK = 0x60, // `
+  BACKSLASH = 0x5c, // \
+  LOWER_X = 0x78,
+  LOWER_U = 0x75,
+};
+
 const EMPTY_STRING = '';
 const WHITE_SPACE = '\x20';
-const LEFT_PAREN_CODE = 0x28; // (
-const RIGHT_PAREN_CODE = 0x29; // )
-const QUOTE_CODE = 0x22; // '
-const APOS_CODE = 0x27; // "
 
 export function trimAll(s: string|any) {
   return isString(s)
@@ -27,7 +35,7 @@ export function stripParens(s: string, deep=true): string {
   }
   const c0 = s.charCodeAt(0);
   const cn = s.charCodeAt(s.length - 1);
-  if (c0 === LEFT_PAREN_CODE && cn === RIGHT_PAREN_CODE) {
+  if (c0 === CharCode.LEFT_PAREN && cn === CharCode.RIGHT_PAREN) {
     s = s.slice(1, s.length - 1);
     return deep ? stripParens(s) : s;
   } else {
@@ -43,8 +51,8 @@ export function stripQuotes(s: string) {
   const cn = s.charCodeAt(s.length - 1);
 
   if (
-    (c0 === QUOTE_CODE && cn === QUOTE_CODE) ||
-    (c0 === APOS_CODE && cn === APOS_CODE)
+    (c0 === CharCode.QUOTE && cn === CharCode.QUOTE) ||
+    (c0 === CharCode.APOS && cn === CharCode.APOS)
   ) {
     return s.slice(1, s.length - 1);
   } else {
@@ -60,4 +68,32 @@ export function stripDoubleCurls(s: string) {
   }
   const result = removeDoubleCurlsRE.exec(t);
   return result?.groups?.exp;
+}
+
+export function toEscapedChar(char: string) {
+  if (isUndefOrEmpty(char)) {
+    return char;
+  } else if (char.length === 1) {
+    switch (char) {
+      case "'": return '\'';
+      case '"': return '\"';
+      case '\\': return '\\'; 
+      case 'n': return '\n';
+      case 't': return '\t';
+      case 'b': return '\b';
+      case 'r': return '\r';
+      case 'v': return '\v';
+      case 'f': return '\f';
+      default: return char;
+    }
+  }
+
+  const unicodeRE = /^u[\d]{4}$/;
+  const hexRE = /^x[a-fA-F\d]{2}$/;
+
+  if (unicodeRE.test(char) || hexRE.test(char)) {
+    return String.fromCharCode(parseInt(char.slice(1), 16));
+  } else {
+    return char;
+  }
 }

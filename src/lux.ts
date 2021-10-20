@@ -2,17 +2,17 @@
 
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';
-import { evalStatement, parseStatement } from './compiler/parser';
+import { evalStatement, parseStatement, pruneString } from './compiler/parser';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
 import { isArray, isDef, isString, isUndef } from './helpers/is';
-import { ArrayOrSingle, Key, State } from './types';
+import { ArrayOrSingle, Key, RenderFn, State } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
+import { ref } from './helpers/ref';
 
-type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
 type DataFn = () => Record<Key, any>;
 
 interface BuildOptions {
@@ -119,6 +119,7 @@ const Lux = {
   getInstance,
   parseStatement,
   evalStatement,
+  pruneString, ref
 };
 
 (<any>globalThis).Lux = Lux;

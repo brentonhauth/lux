@@ -2,7 +2,7 @@ import { arrayUnwrap } from "../helpers/array";
 import { lookup } from "../helpers/functions";
 import { isBoolean, isString, isUndef, isValidVariable } from "../helpers/is";
 import { ref, Reference } from "../helpers/ref";
-import { stripParens, stripQuotes } from "../helpers/strings";
+import { CharCode, stripParens, stripQuotes, toEscapedChar } from "../helpers/strings";
 import { Primitive, State, UndefType } from "../types";
 
 export const enum StatementType {
@@ -25,7 +25,7 @@ export const enum StatementType {
   COMPLEX = 32,
 }
 
-const containsQuoteRE = /("|'|`)/g;
+const containsTickRE = /(`)/g;
 const splitCompOpsRE = /(?:>|<|!=|==)=?/;
 
 type ExpFn = (state?: State, additional?: State) => any;
@@ -61,18 +61,16 @@ export interface Statement {
 }
 
 export function evalStatement(statement: Statement, state: State, additional?: State) {
-  const { type } = statement;
+  const { type, val } = statement;
 
   if (type & StatementType.SINGLE) {
-    let value = <Primitive|UndefType>statement.val;
     return type === StatementType.STRAIGHT_LOOKUP
-      ? lookup(value, state, additional) : value;
+      ? lookup(val, state, additional) : val;
   } else if (type & StatementType.COMPLEX) {
-    let fn = (<ExpFn>statement.val).bind({...state, ...additional});
-    return fn(state, additional);
+    return (<ExpFn>val).call({ ...state, ...additional }, state, additional);
   }
 
-  let [left, op, right] = <OperationArray>statement.val;
+  let [left, op, right] = <OperationArray>val;
 
   if (type & StatementType.LEFT_LOOKUP) {
     left = lookup(left, state, additional);
@@ -128,6 +126,59 @@ function createComplex(exp: string): Statement {
   };
 }
 
+export function pruneString(exp: string, r: Reference<string>, startIndex=0): boolean {
+  const first = exp.charCodeAt(startIndex);
+  
+  if (first !== CharCode.QUOTE && first !== CharCode.APOS) {
+    return false;
+  }
+
+  const from = exp.slice(startIndex);
+  let code: number, end = -1;
+
+  if (/\\/.test(from)) {
+    r.set('');
+    let escaped = false;
+    for (let i = startIndex + 1; i < exp.length; ++i) {
+      code = exp.charCodeAt(i);
+      if (escaped) {
+        let esc;
+        if (code === CharCode.LOWER_X) {
+          esc = exp.slice(i, i + 2);
+        } else if (code === CharCode.LOWER_U) {
+          esc = exp.slice(i, i + 4);
+        } else {
+          esc = exp.charAt(i);
+        }
+        try {
+          esc = toEscapedChar(esc);
+        } catch (e) {}
+        r.value += esc;
+        escaped = false;
+      } else if (code === CharCode.BACKSLASH) {
+        escaped = true;
+        continue;
+      } else if (code === first) {
+        end = i;
+        break;
+      } else {
+        r.value += exp.charAt(i);
+      }
+    }
+  } else {
+    for (let i = startIndex + 1; i < exp.length; ++i) {
+      code = exp.charCodeAt(i);
+      if (code === first) {
+        end = i;
+        r.set(exp.slice(startIndex + 1, end));
+        break;
+      }
+    }
+  }
+
+  return end !== -1;
+}
+
 
 function tryForSimple(exp: string): Statement {
   function simpleCastWrap(val: string, cast: Reference<BasicType|Statement>) {
@@ -140,7 +191,6 @@ function tryForSimple(exp: string): Statement {
     throw StatementType.COMPLEX;
   }
   const op = <ComparisonOp>arrayUnwrap(splitCompOpsRE.exec(exp));
-  console.log(`OP: ${op}  exec: ${splitCompOpsRE.exec(exp)}`);
   if (isUndef(op) || !(op in comparisonOps)) {
     throw StatementType.COMPLEX;
   }
@@ -170,7 +220,11 @@ function tryForSimple(exp: string): Statement {
   }
 }
 
-
+/**
+ * Bug: Passing '"r" == "r"' will yield an incorrect statement.
+ * Be careful with passing strings
+ * @param exp
+ */
 export function parseStatement(exp: string): Statement {
   exp = exp.trim();
   const r = ref<BasicType>();
@@ -179,7 +233,7 @@ export function parseStatement(exp: string): Statement {
       type: StatementType.STRAIGHT_CAST,
       val: r.value
     };
-  } else if (containsQuoteRE.test(exp)) {
+  } else if (containsTickRE.test(exp)) {
     return createComplex(exp);
   }
 

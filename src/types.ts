@@ -8,6 +8,7 @@ export type ArrayOrRecord = Array<any> | Record<Key, any>;
 export type AnyFunction = (...args:any[])=>any|void;
 export type Primitive = string|number|boolean;
 export type Renderable = VNode|string;
+export type RenderFn = (h:(sel:string, data?:any, children?:any)=>VNode) => VNode;
 export type CreateAppFunction = (state: State) => VNode;
 export type PatchFunction = ($el: Element) => Element;
 export type IfStatement = (state: State) => boolean;
