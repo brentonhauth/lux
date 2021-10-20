@@ -2,7 +2,7 @@
 
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';
-import { evalStatement, parseStatement, pruneString } from './compiler/parser';
+import { evalStatement, parseStatement } from './compiler/parser';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
@@ -11,7 +11,6 @@ import { ArrayOrSingle, Key, RenderFn, State } from './types';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
-import { ref } from './helpers/ref';
 
 type DataFn = () => Record<Key, any>;
 
@@ -117,9 +116,10 @@ const Lux = {
   $createApp,
   getState,
   getInstance,
+
+  // Just here for testing
   parseStatement,
   evalStatement,
-  pruneString, ref
 };
 
 (<any>globalThis).Lux = Lux;

@@ -1,6 +1,6 @@
 import { arrayUnwrap } from "../helpers/array";
 import { lookup } from "../helpers/functions";
-import { isBoolean, isString, isUndef, isValidVariable } from "../helpers/is";
+import { isBoolean, isNumber, isPrimitive, isString, isUndef, isValidVariable } from "../helpers/is";
 import { ref, Reference } from "../helpers/ref";
 import { CharCode, stripParens, stripQuotes, toEscapedChar } from "../helpers/strings";
 import { Primitive, State, UndefType } from "../types";
@@ -84,28 +84,32 @@ export function evalStatement(statement: Statement, state: State, additional?: S
 }
 
 function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true): boolean {
-  if (!isNaN(a)) {
-    r.set(Number(a));
-    return true;
-  } else if (isBoolean(a) || a === 'true' || a === 'false') {
-    r.set(Boolean(a));
-    return true;
-  } else if (isUndef(a)) {
-    r.set(a);
-    return true;
-  } else if (a === 'null') {
-    r.set(null);
-    return true;
-  } else if (a === 'undefined') {
-    r.set(undefined);
-    return true;
-  } else if (isString(a)) {
-    if (a === '') {
-      r.set(a);
-      return allowEmptyString;
+  if (isString(a)) {
+    a = stripParens(a);
+    if (!isNaN(a)) { // is number
+      r.set(Number(a));
+      return true;
+    }
+    switch (a) {
+      case 'true':
+        r.set(true);
+        return true;
+      case 'false':
+        r.set(false);
+        return true;
+      case 'null':
+        r.set(null);
+        return true;
+      case 'undefined':
+        r.set(undefined);
+        return true;
+      case '':
+        r.set(a);
+        return allowEmptyString;
+      default:
+        break;
     }
     // TODO: check strings
-    a = stripParens(a);
     const q = stripQuotes(a);
 
     if (a !== q) { // checks if it was wrapped in quotes
@@ -114,6 +118,9 @@ function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true)
     } else {
       return false;
     }
+  } else if (isNumber(a) || isBoolean(a) || isUndef(a)) {
+    r.set(a);
+    return true;
   } else {
     return false;
   }
