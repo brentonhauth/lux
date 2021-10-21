@@ -4,6 +4,14 @@ import { arrayWrap } from "./array";
 import { dom } from "./dom";
 import { isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
 
+export function cached<T>(fn: (p: string|number)=>T): (p:string|number)=>T {
+  const cache: Record<string|number, any> = Object.create(null);
+  return function _cached(p: string|number) {
+    const value = cache[p];
+    return isDef(value) ? value : (cache[p] = fn(p));
+  };
+}
+
 export function forIn(object: any, fn: (k: Key, v: any) => void) {
   for (let i in object) {
     fn(i, object[i]);

@@ -8,6 +8,7 @@ import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
 import { isArray, isDef, isString, isUndef } from './helpers/is';
 import { ArrayOrSingle, Key, RenderFn, State } from './types';
+import { $component, Component, ComponentOptions } from './vdom/component';
 import { diff } from './vdom/patch';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
@@ -30,6 +31,7 @@ class LuxApp {
   private _render: RenderFn;
   private _data: DataFn;
   private _state: Record<string, any>;
+  private _components: Record<string, Component>;
 
   constructor(options: BuildOptions) {
     LuxApp._instance = this;
@@ -38,6 +40,7 @@ class LuxApp {
     this._data = options.data?.bind(this) || noop;
     this._options.render = <any>noop;
     this._state = options.data?.() || {};
+    this._components = {};
     this._root = null;
     this._v = null;
   }
@@ -58,6 +61,13 @@ class LuxApp {
     }
     this._v = this._render(h);
     this._root = $mount(this._v, el);
+    return this;
+  }
+
+  $component(tag: string, options: ComponentOptions): LuxApp {
+    const comp = $component(tag, options);
+    // TODO: check if valid component.
+    this._components[tag] = comp;
     return this;
   }
 

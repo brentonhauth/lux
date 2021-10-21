@@ -1,5 +1,5 @@
-import { isFunc, isString } from "../helpers/is";
-import { RenderFn } from "../types";
+import { isFunc, isHtmlTag, isString } from '../helpers/is';
+import { RenderFn } from '../types';
 
 export interface ComponentOptions {
   render?: RenderFn,
@@ -14,6 +14,12 @@ export interface Component {
 }
 
 export function $component(tag: string, options: ComponentOptions): Component {
+  if (!/^\w+$/i.test(tag)) {
+    return null;
+  } else if (isHtmlTag(tag)) {
+    return null;
+  }
+
   return {
     tag,
     render: options.render,
