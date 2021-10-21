@@ -125,14 +125,14 @@ export class ASTElement extends ASTNode {
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
       ast = processIf(ast, state, additional);
       if (isUndef(ast)) {
-        v = vnode.comment('[IF]');
+        v = null//vnode.comment('[IF]');
         // v.$el = <Element>this.$el;
         return v;
       }
     } else if (ast.flags & ASTFlags.LOOP) {
       let looped = processLoop(ast, state, additional);
       if (looped.length === 0) {
-        v = vnode.comment('[LOOP]');
+        v = null//vnode.comment('[LOOP]');
         // v.$el = <Element>this.$el;
         return v;
       } else {

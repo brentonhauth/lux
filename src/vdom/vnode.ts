@@ -49,11 +49,13 @@ export interface CommentVNode extends VNode {
 
 function normalizeChildren(children: VNodeChildren): VNodeChildren {
   children = normalizedArray(children);
-  for (let i = 0; i < children.length; ++i) {
+  const len = children.length;
+  for (let i = 0; i < len; ++i) {
     if (isString(children[i])) {
       children[i] = vnode.text(<string>children[i]);
     } else if (isUndef(children[i])) {
       children[i] = vnode.comment();
+      continue;
     } else if (!isVNode(children[i])) {
       throw new Error(`Not a VNode! (${children[i]})`);
     }

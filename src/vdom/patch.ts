@@ -46,7 +46,7 @@ function _diff1(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
 
   // let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
   let attrsPatch = attrsDiff(oldNode.data?.attrs, newNode.data?.attrs);
-  let childrenPatch = childrenDiff(oldNode.children, newNode.children);
+  let childrenPatch = childrenDiff(<any>oldNode.children, <any>newNode.children);
 
   return $el => {
     if (isUndef($el)) {
@@ -103,7 +103,7 @@ function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
 
   // let stylePatch = attrsDiff(oldNode.data?.style, newNode.data?.style, true);
   let attrsPatch = attrsDiff(oldNode.data?.attrs, newNode.data?.attrs);
-  let childrenPatch = childrenDiff(oldNode.children, newNode.children);
+  let childrenPatch = childrenDiff(<any>oldNode.children, <any>newNode.children);
 
   return $el => {
     if (isUndef($el)) {
@@ -134,58 +134,47 @@ function batchDiff(oldList: ArrayOrSingle<VNode>, newList: ArrayOrSingle<VNode>)
   return null;
 }
 
-function childrenDiff(oldChildren: VNodeChildren, newChildren: VNodeChildren): PatchFunction {
-  let old = arrayWrap(oldChildren);
-  let _new = arrayWrap(newChildren);
+function childrenDiff(oldChildren: ArrayOrSingle<VNode>, newChildren: ArrayOrSingle<VNode>): PatchFunction {
+  const old = arrayWrap(oldChildren);
+  const _new = arrayWrap(newChildren);
 
-  // console.table([old, _new]);
+  if (old.length > 0 && _new.length === 0) {
+    return $parent => {
+      $parent.childNodes.forEach(c => $parent.removeChild(c));
+      return $parent;
+    };
+  }
 
   const childrenPatches: PatchFunction[] = [];
-  const removes: Array<{i:number}> = [];
 
-  for (let i = 0; i < old.length; i++) {
+  const min = Math.min(old.length, _new.length);
+  for (let i = 0; i < min; ++i) {
     let patch = diff(old[i], _new[i]);
-    // if (patch === removePatch) {
-    //   removes.push({ i });
-    //   continue;
-    // }
-    // POTENTIAL ISSUE DISCOVERED:
-    // -- nodes are being patched out ($el.remove()) and therefore "i"
-    // is pointing to an empty element 
     childrenPatches.push($parent => {
-      if (isUndef($parent)) {
-        console.log('UNDEF PARENT::', old[i], _new[i]);
-      }
-
-      if (isUndef(old[i])) {
-        // TEMP FIX FOR ISSUE ABOVE
-        let n = $parent.childNodes[$parent.childNodes.length - 1];
-        patch(<any>n);
-      } else {// if (isDef($parent)) {
-        patch((<any>old[i])?.$el || <any>$parent.childNodes[i]);
-      }
-
+      patch(<any>$parent.childNodes[i]);
       return $parent;
     });
   }
-  const moreChildren: PatchFunction[] = [];
-  for (let i = old.length; i < _new.length; i++) {
-    moreChildren.push($parent => {
-      $parent.appendChild($render(_new[i]));
-      return $parent;
-    });
+
+  if (old.length < _new.length) {
+    for (let i = old.length; i < _new.length; ++i) {
+      childrenPatches.push($parent => {
+        let e = $render(_new[i]);
+        $parent.appendChild(e);
+        return e;
+      });
+    }
+  } else if (old.length > _new.length) {
+    for (let i = old.length-1; i >= _new.length; --i) {
+      childrenPatches.push($parent => {
+        removePatch(<any>$parent.childNodes[i]);
+        return $parent;
+      });
+    }
   }
 
   return $parent => {
-    for (let patch of childrenPatches) {
-      patch($parent);
-    }
-    for (let more of moreChildren) {
-      more($parent);
-    }
-    // for (let r of removes) {
-    //   removePatch(<any>$parent.childNodes[r.i]);
-    // }
+    childrenPatches.forEach(p => p($parent));
     return $parent;
   };
 }

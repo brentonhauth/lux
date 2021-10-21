@@ -78,7 +78,7 @@ stringInput.addEventListener('input', () => {
   const value = stringInput.value;
   instance.$update({
     str: value,
-    list: value.split(/\s+/)
+    list: value === '' ? [] : value.split(/\s+/)
   });
 });
 
