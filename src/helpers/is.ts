@@ -1,6 +1,6 @@
 
 import { AnyFunction, Primitive, UndefType } from "../types";
-import { CommentVNode, TextVNode, VNode } from "../vdom/vnode";
+import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from "../vdom/vnode";
 import { dom } from "./dom";
 import { cached } from "./functions";
 
@@ -95,9 +95,9 @@ export function isVNode(a: any): a is VNode {
 }
 
 export function isTextVNode(a: any): a is TextVNode {
-  return isVNode(a) && a.tag === '#text';
+  return isVNode(a) && a.tag === UniqueVNodeTags.TEXT;
 }
 
 export function isCommentVNode(a: any): a is CommentVNode {
-  return isVNode(a) && a.tag === '#comment';
+  return isVNode(a) && a.tag === UniqueVNodeTags.COMMENT;
 }

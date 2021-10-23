@@ -1,13 +1,15 @@
 import { isBlankString, isDef, isUndef } from "../helpers/is";
 import { lower, trimAll } from "../helpers/strings";
 import { Reference, ref } from "../helpers/ref";
-import { VNodeEvents } from "../vdom/vnode";
+import { VNodeAttrs, VNodeEvents, VNodeStyle } from "../vdom/vnode";
 import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
 import { warn } from "../core/logging";
 import { parseStatement } from "./parser";
+import { applyAll } from "../helpers/functions";
 
 const functionalAttrs = ['loop', 'if', 'elif', 'else'];
+const specialAttrs = ['style', 'class', 'key'];
 
 const stringExpRE = /^\s*\{\{\s*(.+)*\s*\}\}\s*$/;
 const bindingRE = /^:/g;
@@ -35,7 +37,7 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
     let inIf = false;
     let prev: ASTElement = null;
 
-    const { attrs, events } = compileAttrs(elm, flags);
+    const { attrs, style, events } = compileAttrs(elm, flags);
     for (let i = 0; i < elm.childNodes.length; ++i) {
       const compiled = compileFromDOM(elm.childNodes[i]);
       if (isUndef(compiled)) {
@@ -76,6 +78,7 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
 
     ast = new ASTElement(elm, elm.tagName, attrs, children);
     ast.flags |= flags.value;
+    (<any>ast).style = style;
   }
   return ast;
 }
@@ -92,24 +95,38 @@ function compileAttrs(el: Element, flags: Reference<number>) {
   const attrNames = el.getAttributeNames();
   const attrs: Record<string, {bind:string}|string> = {};
   const events: VNodeEvents = {};
+  let _style: { value: string, bound: boolean };
 
   for (let name of attrNames) {
     if (bindingRE.test(name)) {
       let attr = normalizeBinding(el, name);
       if (functionalAttrs.includes(lower(attr.name))) {
         warn(`Cannot bind "${attr.name}"`);
+        continue;
       }
-      attrs[attr.name] = { bind: attr.value };
+      
       flags.value |= ASTFlags.BIND;
+
+      if (attr.name === 'style') {
+        _style = { value: attr.value, bound: true };
+        continue;
+      }
+
+      attrs[attr.name] = { bind: attr.value };
       // TODO: Add bindings to list
     } else if (eventRE.test(name)) {
       normalizeEvent(el, name);
     } else {
-      attrs[name] = el.getAttribute(name);
+      let value = el.getAttribute(name);
+      if (name === 'style') {
+        _style = { value, bound: false };
+      }
+      attrs[name] = value;
     }
   }
 
-  return { attrs, events };
+  const style = _style ? normalizeStyle(el, _style.value, _style.bound) : null;
+  return { attrs, style, events };
 }
 
 function normalizeBinding(el: Element, attr: string) {
@@ -122,6 +139,18 @@ function normalizeBinding(el: Element, attr: string) {
 
 function normalizeEvent(el: Element, event: string) {
   warn('Events not yet implemented');
+}
+
+function normalizeStyle(el: Element, style: string, isBound: boolean) {
+  const vnodeStyle: VNodeStyle = {};
+  const all = style.split(/;\s*/).map(s => s.split(/:\s*/));
+  all.forEach(x => {
+    if (x.length === 2) {
+      vnodeStyle[x[0].trim()] = x[1];
+    }
+  });
+  // TODO: filter bound styles
+  return vnodeStyle;
 }
 
 function sanitizeFunctoinalAttrs(el: ASTElement, keep: string) {

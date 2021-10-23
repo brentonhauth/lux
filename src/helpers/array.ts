@@ -2,6 +2,8 @@ import { ArrayOrSingle } from '../types';
 import { isArray, isDef, isUndef } from './is';
 
 
+const DEFAULT_COMPARE = (a:any, b:any) => a === b;
+
 export function flattenArray<T>(a: Array<ArrayOrSingle<T>>): T[] {
   if (a.length === 0) return [];
   const flat: T[] = [];
@@ -58,7 +60,7 @@ export function minimizeArray<T>(array: T[]): ArrayOrSingle<T>|null {
 
 export function removeFromArray<T>(array: T[], field: ArrayOrSingle<T>, compare?: (a:T,b:T)=>boolean): T[] {
   field = normalizedArray(field);
-  compare = compare || ((a, b) => a === b);
+  compare = compare || DEFAULT_COMPARE;
   for (let f of field) {
     let i = array.findIndex(v => compare(v, f));
     array.splice(i, 1);
@@ -68,7 +70,7 @@ export function removeFromArray<T>(array: T[], field: ArrayOrSingle<T>, compare?
 
 export function overlappedItems<T>(a1: T[], a2: T[], compare?: (a:T,b:T)=>boolean): T[] {
   const overlap: T[] = [];
-  compare = compare || ((a, b) => a === b);
+  compare = compare || DEFAULT_COMPARE;
   for (let x of a1) {
     let i = a2.findIndex(y => compare(x, y));
     if (i !== -1) {

@@ -1,5 +1,5 @@
 import { dom } from "../helpers/dom";
-import { applyAll, applyAllAttrs } from "../helpers/functions";
+import { applyAll, applyAllAttrs, forIn } from "../helpers/functions";
 import { arrayWrap } from "../helpers/array";
 import { isCommentVNode, isDef, isElement, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { Renderable } from "../types";
@@ -60,7 +60,9 @@ function _render2(node: Renderable): Element {
   node.$el = dom.createElement(node.tag);
   applyAllAttrs(node);
   if (node.data?.style) {
-    applyAll((<any>node.$el), { style: node.data.style });
+    forIn(node.data.style, (k, v) => {
+      (<any>node.$el).style[(<any>k)] = v;
+    });
   }
 
   if (isDef(node.children)) {

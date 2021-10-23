@@ -8,6 +8,12 @@ export const dom = {
     el.setAttribute(attr, value);
   },
   
+  removeAllChildren(el: Element) {
+    while (el.childNodes.length) {
+      el.removeChild(el.lastChild);
+    }
+  },
+  
   createText(text: string): Text {
     return document.createTextNode(text);
   },

@@ -3,6 +3,11 @@ import { arrayWrap, normalizedArray } from "../helpers/array";
 import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
 import { ArrayOrSingle } from "../types";
 
+export const enum UniqueVNodeTags {
+  COMMENT = '#comment',
+  TEXT = '#text',
+}
+
 export const enum VNodeCloneFlags {
   DEEP = 1,
   ELEMENT = 2,
@@ -23,6 +28,7 @@ export type VNodeEvents = Record<string, Event>;
 export type VNodeChildren = ArrayOrSingle<VNode|string>;
 
 export interface VNodeData {
+  key?: string;
   attrs?: VNodeAttrs;
   class?: VNodeClass;
   style?: VNodeStyle;
@@ -33,6 +39,7 @@ export interface VNodeData {
 export interface VNode {
   __isVnode: true; // temporary
   tag: string;
+  key?: string;
   $el?: Element;
   flags?: VNodeFlags;
   data?: VNodeData;
@@ -73,55 +80,40 @@ export function vnode(tag: string, data?: VNodeData|VNodeChildren, children?: VN
     children = normalizeChildren(children);
   }
 
-  return {
-    tag,
-    data: <VNodeData>data,
-    children,
-    flags: 0,
-    $el: null,
-    __isVnode: true,
-  };
+  const key = <string>(data?.key || (<VNodeData>data)?.attrs?.id);
+
+  return _vnode(tag, 0, null, key, null, data, <VNode[]>children);
 }
 
 vnode.text = function(text: string|number|boolean): TextVNode {
-  return {
-    tag: '#text',
-    text: String(text),
-    flags: VNodeFlags.TEXT,
-    children: null,
-    data: null,
-    $el: null,
-    __isVnode: true,
-  };
+  return <TextVNode>_vnode(UniqueVNodeTags.TEXT, VNodeFlags.TEXT, String(text));
 };
 
-vnode.comment = function(comment?: string): CommentVNode {
-  return {
-    tag: '#comment',
-    comment: comment || '',
-    flags: VNodeFlags.COMMENT,
-    children: null,
-    data: null,
-    $el: null,
-    __isVnode: true,
-  };
+vnode.comment = function(_comment?: string): CommentVNode {
+  return <CommentVNode>_vnode(UniqueVNodeTags.COMMENT, VNodeFlags.COMMENT, _comment);
 };
 
 vnode.clone = function(node: VNode, flags?: VNodeCloneFlags): VNode {
-  if (isTextVNode(node)) {
-    return vnode.text(node.text);
-  } else if (isCommentVNode(node)) {
-    return vnode.comment(node.comment);
+  if (isUndef(node)) {
+    return null;
+  } else if (node.tag === UniqueVNodeTags.TEXT) {
+    return vnode.text((<TextVNode>node).text);
+  } else if (node.tag === UniqueVNodeTags.COMMENT) {
+    return vnode.comment();
   }
 
-  const cloned: VNode = {
-    tag: node.tag,
-    data: Object.create(node.data),
-    flags: node.flags,
-    children: arrayWrap(node.children).map(c => vnode.clone(<VNode>c)),
-    $el: null,
-    __isVnode: true,
-  };
-
-  return cloned;
+  const children = arrayWrap(node.children).map(c => vnode.clone(<VNode>c));
+  return _vnode(node.tag, node.flags, null, node.key, null, node.data, children);
 };
+
+function _vnode(
+  tag: string,
+  flags?: VNodeFlags,
+  text?: string,
+  key?: string,
+  $el?: Element,
+  data?: VNodeData,
+  children?: VNode[]
+): VNode {
+  return <any>{ tag, flags, text, key, data, children, $el, __isVnode: true };
+}

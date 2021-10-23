@@ -4,6 +4,7 @@ import { isCommentVNode, isDef, isObjectLike, isString, isTextVNode, isUndef } f
 import { ArrayOrSingle, PatchFunction } from "../types";
 import { $render } from "./render";
 import { VNode, VNodeChildren } from "./vnode";
+import { dom } from "../helpers/dom";
 
 const removePatch: PatchFunction = $el => void $el.remove();
 // <></>
@@ -140,7 +141,7 @@ function childrenDiff(oldChildren: ArrayOrSingle<VNode>, newChildren: ArrayOrSin
 
   if (old.length > 0 && _new.length === 0) {
     return $parent => {
-      $parent.childNodes.forEach(c => $parent.removeChild(c));
+      dom.removeAllChildren($parent);
       return $parent;
     };
   }
