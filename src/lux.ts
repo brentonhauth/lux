@@ -3,6 +3,8 @@
 import { ASTElement } from './compiler/ast/astelement';
 import { compileFromDOM } from './compiler/compiler';
 import { evalStatement, parseStatement } from './compiler/parser';
+import { BuildContext, createContext } from './core/context';
+import { warn } from './core/logging';
 import { h } from './h';
 import { dom } from './helpers/dom';
 import { applyAll, noop } from './helpers/functions';
@@ -25,6 +27,7 @@ let _instance: LuxApp = null;
 class LuxApp {
   static _instance: LuxApp;
   private _options: BuildOptions;
+  private _context: BuildContext;
   private _root: Element;
   private _v: VNode;
   private _ast: ASTElement;
@@ -41,17 +44,18 @@ class LuxApp {
     this._options.render = <any>noop;
     this._state = options.data?.() || {};
     this._components = {};
+    this._context = createContext(this._state, []);
     this._root = null;
     this._v = null;
   }
 
   getState(query?: ArrayOrSingle<string>) {
     if (isUndef(query)) {
-      return this._state;
+      return this._context.state;
     } else if (isArray(query)) {
-      return query.map(q => this._state[q]);
+      return query.map(q => this._context.state[q]);
     } else {
-      return this._state[query];
+      return this._context.state[query];
     }
   }
 
@@ -67,12 +71,18 @@ class LuxApp {
   $component(tag: string, options: ComponentOptions): LuxApp {
     const comp = $component(tag, options);
     // TODO: check if valid component.
-    this._components[tag] = comp;
+    const index = this._context.components.findIndex(c => c.tag === tag);
+    if (index === -1) {
+      this._context.components.push(comp);
+      this._components[tag] = comp;
+    } else {
+      warn('Already component of that name');
+    }
     return this;
   }
 
   $update(state: Record<string, any>): LuxApp {
-    applyAll(this._state, state);
+    applyAll(this._context.state, state);
     const v = this._render(h);
     // console.table([this._v, v], ['tag', '$el', 'data', 'children']);
     if (isUndef(v)) {
@@ -98,8 +108,8 @@ class LuxApp {
     }
     this._root = el;
     // this._v = vnode(el.tagName, );
-    this._ast = <ASTElement>compileFromDOM(el);
-    this._render = () => <VNode>this._ast.toVNode(getState());
+    this._ast = <ASTElement>compileFromDOM(el, this._context);
+    this._render = () => <VNode>this._ast.toVNode(this._context);
     this.$update(this._state);
     return this;
   }

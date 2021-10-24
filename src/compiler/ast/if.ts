@@ -1,3 +1,4 @@
+import { BuildContext } from "../../core/context";
 import { isDef, isUndef } from "../../helpers/is";
 import { getState } from "../../lux";
 import { State } from "../../types";
@@ -10,12 +11,12 @@ export interface IfCondition {
   next?: ASTElement;
 }
 
-export function processIf(ast: ASTElement, state?: State, additional?: State) {
+export function processIf(ast: ASTElement, context: BuildContext) {
   if (isUndef(ast.if)) {
     return null;
   }
 
-  state = state || getState();
+  const { state, additional } = context;
 
   while (isDef(ast?.if)) {
     if (evalStatement(ast.if.exp, state, additional)) {

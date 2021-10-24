@@ -1,3 +1,4 @@
+import { ASTComponent, ASTElement } from '../compiler/ast/astelement';
 import { isFunc, isHtmlTag, isString } from '../helpers/is';
 import { RenderFn } from '../types';
 
@@ -8,6 +9,7 @@ export interface ComponentOptions {
 
 export interface Component {
   tag: string,
+  ast: ASTElement,
   options: ComponentOptions,
   render?: RenderFn,
   template?: string|Element,
@@ -22,6 +24,7 @@ export function $component(tag: string, options: ComponentOptions): Component {
 
   return {
     tag,
+    ast: null,
     render: options.render,
     template: options.template,
     options,

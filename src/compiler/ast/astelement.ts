@@ -1,9 +1,11 @@
+import { BuildContext, withContext } from "../../core/context";
 import { warn } from "../../core/logging";
-import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
+import { arrayUnwrap, arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
 import { isBlankString, isDef, isPrimitive, isUndef, isUndefOrEmpty } from "../../helpers/is";
 import { stripDoubleCurls, trimAll } from "../../helpers/strings";
 import { getState } from "../../lux";
 import { ArrayOrSingle, Primitive, State } from "../../types";
+import { Component } from "../../vdom/component";
 import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
 import { parseStatement, Statement } from "../parser";
 import { processExpression } from "./expression";
@@ -16,6 +18,7 @@ export const enum ASTType {
   ELEMENT = 1,
   EXPRESSION = 2,
   TEXT = 3,
+  COMPONENT = 4,
 }
 
 export const enum ASTFlags {
@@ -25,6 +28,7 @@ export const enum ASTFlags {
   BIND = 4,
   LOOP = 8,
   STATIC = 16,
+  COMPONENT_MASK = 32,
 }
 
 export abstract class ASTNode {
@@ -59,7 +63,7 @@ export abstract class ASTNode {
     return this.parent.children[index + offset];
   }
 
-  public abstract toVNode(state?: State, additional?: State): ArrayOrSingle<VNode>;
+  public abstract toVNode(context: BuildContext): ArrayOrSingle<VNode>;
   public markIfStatic() {
     if (this.type === ASTType.TEXT) {
       this.flags |= ASTFlags.STATIC;
@@ -104,8 +108,10 @@ export class ASTElement extends ASTNode {
     }
   }
 
-  normalizedAttrs(state: State, additional:State={}) {
+  normalizedAttrs(context: BuildContext) {
+    let { state, additional } = context;
     state = state || getState();
+    additional = additional || {};
     const attrs: VNodeAttrs = {};
     for (let name in this.attrs) {
       let attr = this.attrs[name];
@@ -120,17 +126,17 @@ export class ASTElement extends ASTNode {
     return attrs;
   }
 
-  toVNode(state?: State, additional?: State): ArrayOrSingle<VNode> {
+  toVNode(context: BuildContext): ArrayOrSingle<VNode> {
     let v: VNode, ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
-      ast = processIf(ast, state, additional);
+      ast = processIf(ast, context);
       if (isUndef(ast)) {
         v = null//vnode.comment('[IF]');
         // v.$el = <Element>this.$el;
         return v;
       }
     } else if (ast.flags & ASTFlags.LOOP) {
-      let looped = processLoop(ast, state, additional);
+      let looped = processLoop(ast, context);
       if (looped.length === 0) {
         v = null//vnode.comment('[LOOP]');
         // v.$el = <Element>this.$el;
@@ -141,16 +147,46 @@ export class ASTElement extends ASTNode {
       }
     }
 
-    const children = normalizedArray(ast.children).map(c => c.toVNode(state, additional));
+    if (ast instanceof ASTComponent) {
+      ast = ast.root;
+    }
+
+    const children = normalizedArray(ast.children).map(c => c.toVNode(context));
 
 
     v = vnode(ast.tag, {
-      attrs: ast.normalizedAttrs(state, additional),
+      attrs: ast.normalizedAttrs(context),
       style: ast.style,
     }, <any>flattenArray(children));
     // v.$el = <Element>this.$el;
     return v;
   }
+}
+
+export class ASTComponent extends ASTElement {
+
+  public component: Component;
+  public currentProps: Record<string, any>;
+  public root: ASTElement;
+
+  constructor(component: Component, root: ASTElement) {
+    super(null, component.tag, {}, []);
+    this.flags |= ASTFlags.COMPONENT_MASK;
+    this.component = component;
+    this.currentProps = {};
+    this.root = root;
+    component.ast = this.root;
+  }
+
+  props(p: Record<string, any>): ASTComponent {
+    this.currentProps = p;
+    return this;
+  }
+
+  // public toVNode(context: BuildContext): VNode {
+  //   const ctx = withContext(context, this.currentProps);
+  //   return arrayUnwrap(this.root.toVNode(ctx));
+  // }
 }
 
 export class ASTExpression extends ASTNode {
@@ -170,10 +206,10 @@ export class ASTExpression extends ASTNode {
     }
   }
 
-  toVNode(state?: State, additional?: State): VNode {
+  toVNode(context: BuildContext): VNode {
     let v: VNode;
     if (isDef(this.exp)) {
-      v = processExpression(this, state, additional);
+      v = processExpression(this, context);
     } else {
       v = vnode.text('');
     }

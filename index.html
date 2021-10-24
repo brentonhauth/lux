@@ -43,8 +43,14 @@
     <div style="width:200px;height: 50px;background-color: yellow;">
       <span>{{ str === "My String" }}</span>
     </div>
-    <div style="width:200px;height: 50px;background-color: green;" :test="str">Green</div>
+    <div style="width:200px;height: 50px;background-color: green;" :test="str">
+        <Comp loop="i in list" />
+    </div>
   </div>
+
+  <template id="Comp1">
+    <span style="width: 10px;height:10px;background-color: purple">C!</span>
+  </template>
 
   <!-- Engine Scripts -->
   <script type="module" src="./src/lux.ts"></script>

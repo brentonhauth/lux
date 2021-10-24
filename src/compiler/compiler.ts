@@ -1,12 +1,14 @@
-import { isBlankString, isDef, isUndef } from "../helpers/is";
+import { isBlankString, isDef, isHtmlTag, isString, isUndef } from "../helpers/is";
 import { lower, trimAll } from "../helpers/strings";
 import { Reference, ref } from "../helpers/ref";
 import { VNodeAttrs, VNodeEvents, VNodeStyle } from "../vdom/vnode";
-import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
+import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
 import { parseLoop } from "./ast/loop";
 import { warn } from "../core/logging";
 import { parseStatement } from "./parser";
 import { applyAll } from "../helpers/functions";
+import { BuildContext } from "../core/context";
+import { dom } from "../helpers/dom";
 
 const functionalAttrs = ['loop', 'if', 'elif', 'else'];
 const specialAttrs = ['style', 'class', 'key'];
@@ -16,11 +18,11 @@ const bindingRE = /^:/g;
 const eventRE = /^@/g;
 
 
-export function compileFromDOM(el: Element|Node): ASTNode {
-  return _compileFromDOM(el, true)
+export function compileFromDOM(el: Element|Node, context: BuildContext): ASTNode {
+  return _compileFromDOM(el, context, true)
 }
 
-function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
+function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false): ASTNode {
   let ast: ASTNode;
   if (el.nodeType === Node.TEXT_NODE) {
     if (isBlankString(el.textContent)) {
@@ -32,6 +34,25 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
     }
   } else if (el.nodeType === Node.ELEMENT_NODE) {
     const elm = <Element>el;
+
+    if (!isHtmlTag(elm.tagName)) {
+      let index = context.components.findIndex(
+        c => c.tag.toLowerCase() === elm.tagName.toLowerCase());
+      if (index !== -1) {
+        let comp = context.components[index];
+        let root: ASTElement|null;
+        if (isDef(comp.ast)) {
+          root = comp.ast;
+        } else {
+          root = <any>compileComponentTemplate(comp.template, context);
+          if (isUndef(root)) {
+            return null;
+          }
+        }
+        return new ASTComponent(comp, root);
+      }
+    }
+
     const children: Array<ASTNode> = [];
     let flags = ref(0);
     let inIf = false;
@@ -39,7 +60,7 @@ function _compileFromDOM(el: Element|Node, isRoot=false): ASTNode {
 
     const { attrs, style, events } = compileAttrs(elm, flags);
     for (let i = 0; i < elm.childNodes.length; ++i) {
-      const compiled = compileFromDOM(elm.childNodes[i]);
+      const compiled = compileFromDOM(elm.childNodes[i], context);
       if (isUndef(compiled)) {
         continue;
       } else if (compiled.type !== ASTType.ELEMENT) {
@@ -89,6 +110,26 @@ function addIfStatement(ast: ASTElement, attr: string) {
   ast.if = { raw, exp, next: null };
   ast.flags |= ASTFlags.IF;
   sanitizeFunctoinalAttrs(ast, attr);
+}
+
+function compileComponentTemplate(template: string|Element, context: BuildContext) {
+  let elm: Element = isString(template) ? dom.select(template) : template;
+  if (isUndef(elm)) {
+    return null;
+  } else if (elm.tagName.toLowerCase() === 'template') {
+    if ((<any>elm)?.content?.children?.length !== 1) {
+      warn('Component can only have 1 root node');
+      return null;
+    }
+    elm = (<any>elm)?.content?.children[0];
+  }
+  const ast = compileFromDOM(elm, context);
+  if (ast.type !== ASTType.ELEMENT) {
+    warn('Component must be made of elements');
+    return null;
+  }
+
+  return ast;
 }
 
 function compileAttrs(el: Element, flags: Reference<number>) {

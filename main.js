@@ -50,6 +50,8 @@ const instance = Lux.$createApp({
       ...cs
     ]);
   }
+}).$component('Comp', {
+  template: '#Comp1'
 }).$compile('#App');
 
 
