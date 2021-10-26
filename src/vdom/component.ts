@@ -4,12 +4,14 @@ import { RenderFn } from '../types';
 
 export interface ComponentOptions {
   render?: RenderFn,
-  template?: string|Element
+  template?: string|Element,
+  props?: Array<string>,
 }
 
 export interface Component {
   tag: string,
   ast: ASTElement,
+  props: Array<string>,
   options: ComponentOptions,
   render?: RenderFn,
   template?: string|Element,
@@ -25,6 +27,7 @@ export function $component(tag: string, options: ComponentOptions): Component {
   return {
     tag,
     ast: null,
+    props: options.props || [],
     render: options.render,
     template: options.template,
     options,

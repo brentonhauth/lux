@@ -42,14 +42,15 @@
     </div>
     <div style="width:200px;height: 50px;background-color: yellow;">
       <span>{{ str === "My String" }}</span>
+      <Comp :txt="str" />
     </div>
     <div style="width:200px;height: 50px;background-color: green;" :test="str">
-        <Comp loop="i in list" />
+        <Comp loop="i in list" :txt="i" />
     </div>
   </div>
 
   <template id="Comp1">
-    <span style="width: 10px;height:10px;background-color: purple">C!</span>
+    <span style="width: 10px;height:10px;background-color: purple">{{ txt }}</span>
   </template>
 
   <!-- Engine Scripts -->

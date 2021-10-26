@@ -5,6 +5,7 @@ import { ArrayOrSingle, PatchFunction } from "../types";
 import { $render } from "./render";
 import { VNode, VNodeChildren } from "./vnode";
 import { dom } from "../helpers/dom";
+import { ignoreCaseEquals } from "../helpers/strings";
 
 const removePatch: PatchFunction = $el => void $el.remove();
 // <></>
@@ -94,7 +95,7 @@ function _diff2(oldNode: VNode, newNode: VNode): PatchFunction {
         $el.replaceWith(t);
         return $el;
       });
-  } else if (oldNode.tag.toLowerCase() !== newNode.tag.toLowerCase()) {
+  } else if (!ignoreCaseEquals(oldNode.tag, newNode.tag)) {
     return $el => {
       let e = $render(newNode);
       $el.replaceWith(e);
@@ -206,14 +207,14 @@ function attrsDiff(oldAttrs: Record<string, any>, newAttrs: Record<string, any>,
   return ($el: any) => {
     remove.forEach(raw ?
       r => delete $el[(<any>r)] :
-      r => $el?.removeAttribute(r));
+      r => dom.delAttr($el, r));
     forIn(apply, (k, v) => {
       if (isObjectLike(v)) {
         forIn(v, (ik, iv) => $el[(<any>k)][ik] = iv);
       } else if (raw) {
         $el[(<any>k)] = v;
       } else {
-        $el?.setAttribute(<string>k, v);
+        dom.setAttr($el, <string>k, v);
       }
     });
     return $el;

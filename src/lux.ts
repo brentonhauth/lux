@@ -1,6 +1,7 @@
 // <reference path="./vdom/patch.ts" />
 
 import { ASTElement } from './compiler/ast/astelement';
+import { toVNode } from './compiler/ast/toVnode';
 import { compileFromDOM } from './compiler/compiler';
 import { evalStatement, parseStatement } from './compiler/parser';
 import { BuildContext, createContext } from './core/context';
@@ -109,7 +110,7 @@ class LuxApp {
     this._root = el;
     // this._v = vnode(el.tagName, );
     this._ast = <ASTElement>compileFromDOM(el, this._context);
-    this._render = () => <VNode>this._ast.toVNode(this._context);
+    this._render = () => toVNode(this._ast, this._context);
     this.$update(this._state);
     return this;
   }

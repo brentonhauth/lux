@@ -8,6 +8,7 @@ import { getState } from "../../lux";
 import { State } from "../../types";
 import { VNode, vnode } from "../../vdom/vnode";
 import { ASTComponent, ASTElement, ASTFlags } from "./astelement";
+import { toVNodeDry } from "./toVnode";
 
 const loopSplitRE = /\s+(?:of|in)\s+/;
 
@@ -26,8 +27,7 @@ export function processLoop(ast: ASTElement, context: BuildContext): Array<VNode
   }
 
   const { alias, items } = ast.loop;
-  const { state, additional } = context;
-  const rend: ASTElement = ast instanceof ASTComponent ? ast.root : ast;  
+  const { state, additional } = context; 
 
   let list: Array<any> = lookup(items, state, additional);
 
@@ -41,12 +41,13 @@ export function processLoop(ast: ASTElement, context: BuildContext): Array<VNode
   const output = [];
   for (let i in list) {
     let ctx = withContext(context, { [alias]: list[i] });
-    let children = normalizedArray(rend.children).map(c => c.toVNode(ctx));
-    let v = vnode(rend.tag, {
-      attrs: rend.normalizedAttrs(ctx),
-      style: rend.style,
-    }, <any>children);
-    output.push(v);
+    output.push(toVNodeDry(ast, ctx));
+    // let children = normalizedArray(rend.children).map(c => c.toVNode(ctx));
+    // let v = vnode(rend.tag, {
+    //   attrs: rend.normalizedAttrs(ctx),
+    //   style: rend.style,
+    // }, <any>children);
+    // output.push(v);
   }
   return output;
 }

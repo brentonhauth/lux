@@ -1,5 +1,5 @@
 import { isBlankString, isDef, isHtmlTag, isString, isUndef } from "../helpers/is";
-import { lower, trimAll } from "../helpers/strings";
+import { safeLower, trimAll } from "../helpers/strings";
 import { Reference, ref } from "../helpers/ref";
 import { VNodeAttrs, VNodeEvents, VNodeStyle } from "../vdom/vnode";
 import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
@@ -35,9 +35,17 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
   } else if (el.nodeType === Node.ELEMENT_NODE) {
     const elm = <Element>el;
 
+    const children: Array<ASTNode> = [];
+    let flags = ref(0);
+    let inIf = false;
+    let prev: ASTElement = null;
+
+    const { attrs, style, events } = compileAttrs(elm, flags);
+
     if (!isHtmlTag(elm.tagName)) {
+      const elmTagName = safeLower(elm.tagName);
       let index = context.components.findIndex(
-        c => c.tag.toLowerCase() === elm.tagName.toLowerCase());
+        c => c.tag.toLowerCase() === elmTagName);
       if (index !== -1) {
         let comp = context.components[index];
         let root: ASTElement|null;
@@ -49,18 +57,13 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
             return null;
           }
         }
-        return new ASTComponent(comp, root);
+        return new ASTComponent(elm, comp, root, attrs);
       }
     }
 
-    const children: Array<ASTNode> = [];
-    let flags = ref(0);
-    let inIf = false;
-    let prev: ASTElement = null;
-
-    const { attrs, style, events } = compileAttrs(elm, flags);
     for (let i = 0; i < elm.childNodes.length; ++i) {
-      const compiled = compileFromDOM(elm.childNodes[i], context);
+      const childElm = <Element>elm.childNodes[i];
+      const compiled = compileFromDOM(childElm, context);
       if (isUndef(compiled)) {
         continue;
       } else if (compiled.type !== ASTType.ELEMENT) {
@@ -116,12 +119,13 @@ function compileComponentTemplate(template: string|Element, context: BuildContex
   let elm: Element = isString(template) ? dom.select(template) : template;
   if (isUndef(elm)) {
     return null;
-  } else if (elm.tagName.toLowerCase() === 'template') {
-    if ((<any>elm)?.content?.children?.length !== 1) {
+  } else if (dom.tagIs(elm, 'template')) {
+    let children = (<any>elm)?.content?.children;
+    if (children?.length !== 1) {
       warn('Component can only have 1 root node');
       return null;
     }
-    elm = (<any>elm)?.content?.children[0];
+    elm = children[0];
   }
   const ast = compileFromDOM(elm, context);
   if (ast.type !== ASTType.ELEMENT) {
@@ -141,7 +145,7 @@ function compileAttrs(el: Element, flags: Reference<number>) {
   for (let name of attrNames) {
     if (bindingRE.test(name)) {
       let attr = normalizeBinding(el, name);
-      if (functionalAttrs.includes(lower(attr.name))) {
+      if (functionalAttrs.includes(safeLower(attr.name))) {
         warn(`Cannot bind "${attr.name}"`);
         continue;
       }
@@ -194,14 +198,16 @@ function normalizeStyle(el: Element, style: string, isBound: boolean) {
   return vnodeStyle;
 }
 
-function sanitizeFunctoinalAttrs(el: ASTElement, keep: string) {
+function sanitizeFunctoinalAttrs(ast: ASTElement, keep: string) {
+  const el = <Element>ast.$el;
   for (let u of functionalAttrs) {
-    if (u !== keep && u in el.attrs) {
+    if (u !== keep && u in ast.attrs) {
       warn(`Cannot have "${u}" attribute with "${keep}".`);
-      delete el.attrs[u];
-    } else if (isDef(el.attrs[`:${u}`])) {
-      warn(`"${u}" is not meant to be bound!`);
-      delete el.attrs[u];
+    }
+    
+    if (dom.hasAttr(el, u)) {
+      delete ast.attrs[u];
+      dom.delAttr(el, u);
     }
   }
 }

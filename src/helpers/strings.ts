@@ -2,6 +2,11 @@ import { isString, isUndefOrEmpty } from "./is";
 
 const twoPlusSpacesRE = /\s{2,}/;
 const removeDoubleCurlsRE = /^\{\{\s*(?<exp>.*)\s*\}\}$/;
+const unicodeRE = /^u[\d]{4}$/;
+const hexRE = /^x[a-fA-F\d]{2}$/;
+
+const EMPTY_STRING = '';
+const WHITE_SPACE = '\x20';
 
 
 export const enum CharCode {
@@ -15,16 +20,13 @@ export const enum CharCode {
   LOWER_U = 0x75,
 };
 
-const EMPTY_STRING = '';
-const WHITE_SPACE = '\x20';
-
 export function trimAll(s: string|any) {
   return isString(s)
     ? s.trim().replace(twoPlusSpacesRE, WHITE_SPACE)
     : EMPTY_STRING;
 }
 
-export function lower(s: string|any) {
+export function safeLower(s: string|any) {
   return isString(s) ? s.toLowerCase() : s;
 }
 
@@ -60,6 +62,14 @@ export function stripQuotes(s: string) {
   }
 }
 
+export function ignoreCaseEquals(a: string, b: string) {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+export function safeIgnoreCaseEquals(a: string, b: string) {
+  return safeLower(a) === safeLower(b);
+}
+
 export function stripDoubleCurls(s: string) {
   const t = s.trim();
   if (t.length < 4) {
@@ -87,9 +97,6 @@ export function toEscapedChar(char: string) {
       default: return char;
     }
   }
-
-  const unicodeRE = /^u[\d]{4}$/;
-  const hexRE = /^x[a-fA-F\d]{2}$/;
 
   if (unicodeRE.test(char) || hexRE.test(char)) {
     return String.fromCharCode(parseInt(char.slice(1), 16));

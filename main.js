@@ -51,7 +51,8 @@ const instance = Lux.$createApp({
     ]);
   }
 }).$component('Comp', {
-  template: '#Comp1'
+  template: '#Comp1',
+  props: ['txt']
 }).$compile('#App');
 
 

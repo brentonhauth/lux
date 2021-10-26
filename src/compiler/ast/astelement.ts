@@ -18,7 +18,6 @@ export const enum ASTType {
   ELEMENT = 1,
   EXPRESSION = 2,
   TEXT = 3,
-  COMPONENT = 4,
 }
 
 export const enum ASTFlags {
@@ -166,19 +165,21 @@ export class ASTElement extends ASTNode {
 export class ASTComponent extends ASTElement {
 
   public component: Component;
+  public props: Array<string>;
   public currentProps: Record<string, any>;
   public root: ASTElement;
 
-  constructor(component: Component, root: ASTElement) {
-    super(null, component.tag, {}, []);
+  constructor(el: Element, component: Component, root: ASTElement, attrs: Record<string,{bind:string}|Primitive>) {
+    super(el, component.tag, attrs, []);
     this.flags |= ASTFlags.COMPONENT_MASK;
     this.component = component;
     this.currentProps = {};
+    this.props = component.props;
     this.root = root;
     component.ast = this.root;
   }
 
-  props(p: Record<string, any>): ASTComponent {
+  setProps(p: Record<string, any>): ASTComponent {
     this.currentProps = p;
     return this;
   }

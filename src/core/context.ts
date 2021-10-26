@@ -1,3 +1,4 @@
+import { applyAll } from "../helpers/functions";
 import { isDef, isObject } from "../helpers/is";
 import { State } from "../types";
 import { Component } from "../vdom/component";
