@@ -1,3 +1,4 @@
+import { safeGet } from "./functions";
 import { isString, isUndefOrEmpty } from "./is";
 
 const twoPlusSpacesRE = /\s{2,}/;
@@ -19,6 +20,12 @@ export const enum CharCode {
   LOWER_X = 0x78,
   LOWER_U = 0x75,
 };
+
+
+const _toString = Object.prototype.toString;
+export function toString(a: any) {
+  return _toString.call(a);
+}
 
 export function trimAll(s: string|any) {
   return isString(s)
@@ -77,7 +84,7 @@ export function stripDoubleCurls(s: string) {
     return s;
   }
   const result = removeDoubleCurlsRE.exec(t);
-  return result?.groups?.exp;
+  return safeGet<string>(result, 'groups.exp', EMPTY_STRING);
 }
 
 export function toEscapedChar(char: string) {

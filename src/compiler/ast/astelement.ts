@@ -28,6 +28,8 @@ export const enum ASTFlags {
   LOOP = 8,
   STATIC = 16,
   COMPONENT_MASK = 32,
+  ROOT = 64,
+  ABSOLUTE_ROOT = ROOT|128
 }
 
 export abstract class ASTNode {

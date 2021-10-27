@@ -2,7 +2,7 @@ import { Key, Primitive, State } from "../types";
 import { VNode, VNodeAttrs } from "../vdom/vnode";
 import { arrayWrap } from "./array";
 import { dom } from "./dom";
-import { isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
+import { isArray, isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
 
 export function cached<T>(fn: (p: string|number)=>T): (p:string|number)=>T {
   const cache: Record<string|number, any> = Object.create(null);
@@ -10,6 +10,23 @@ export function cached<T>(fn: (p: string|number)=>T): (p:string|number)=>T {
     const value = cache[p];
     return isDef(value) ? value : (cache[p] = fn(p));
   };
+}
+
+const splitPath = cached((path: string) => {
+  return path.trim().split('.');
+});
+
+export function safeGet<T>(obj: any, path: string, default0?: T): T {
+  const absPath = splitPath(path);
+  for (let p of absPath) {
+    if (isDef(obj)) {
+      obj = obj[p];
+    } else {
+      return default0;
+    }
+  }
+
+  return <T>obj;
 }
 
 export function forIn(object: any, fn: (k: Key, v: any) => void) {
@@ -70,4 +87,34 @@ export function lookup(name: string|number|any|symbol, state: State, additional?
     return state[name];
   }
   return null;
+}
+
+export function compareDeep(a: any, b: any) {
+  if (a === b) {
+    return true;
+  } else if (isArray(a)) {
+    if (isArray(b) && a.length === b.length) {
+      for (let i = 0; i < a.length; ++i) {
+        if (!compareDeep(a[i], b[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+  } else if (isObjectLike(a)) {
+    if (!isObject(b)) return false;
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length === bKeys.length) {
+      for (let key of aKeys) {
+        if (!bKeys.includes(key)) {
+          return false;
+        } else if (!compareDeep(a[key], b[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 }

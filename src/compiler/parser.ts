@@ -67,7 +67,7 @@ export function evalStatement(statement: Statement, state: State, additional?: S
     return type === StatementType.STRAIGHT_LOOKUP
       ? lookup(val, state, additional) : val;
   } else if (type & StatementType.COMPLEX) {
-    return (<ExpFn>val).call({ ...state, ...additional }, state, additional);
+    return (<ExpFn>val).call({ ...state, ...(additional||{}) }, state, additional);
   }
 
   let [left, op, right] = <OperationArray>val;
@@ -87,22 +87,17 @@ function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true)
   if (isString(a)) {
     a = stripParens(a);
     if (!isNaN(a)) { // is number
-      r.set(Number(a));
-      return true;
+      return r.set(Number(a));
     }
     switch (a) {
       case 'true':
-        r.set(true);
-        return true;
+        return r.set(true);
       case 'false':
-        r.set(false);
-        return true;
+        return r.set(false);
       case 'null':
-        r.set(null);
-        return true;
+        return r.set(null);
       case 'undefined':
-        r.set(undefined);
-        return true;
+        return r.set(undefined);
       case '':
         r.set(a);
         return allowEmptyString;

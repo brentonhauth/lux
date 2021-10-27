@@ -6,7 +6,7 @@ import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, AS
 import { parseLoop } from "./ast/loop";
 import { warn } from "../core/logging";
 import { parseStatement } from "./parser";
-import { applyAll } from "../helpers/functions";
+import { applyAll, safeGet } from "../helpers/functions";
 import { BuildContext } from "../core/context";
 import { dom } from "../helpers/dom";
 
@@ -120,7 +120,8 @@ function compileComponentTemplate(template: string|Element, context: BuildContex
   if (isUndef(elm)) {
     return null;
   } else if (dom.tagIs(elm, 'template')) {
-    let children = (<any>elm)?.content?.children;
+
+    let children: any = safeGet(elm, 'content.children');
     if (children?.length !== 1) {
       warn('Component can only have 1 root node');
       return null;

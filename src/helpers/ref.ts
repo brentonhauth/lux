@@ -1,7 +1,7 @@
 export interface Reference<T> {
   value: T,
   get(): T,
-  set(a:T): void,
+  set(a:T): boolean,
   __isRef: true
 };
 
@@ -15,6 +15,7 @@ export function ref<T>(value?:T): Reference<T> {
     },
     set(value:T) {
       this.value = value;
+      return true;
     },
   };
 }

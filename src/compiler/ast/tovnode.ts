@@ -29,14 +29,14 @@ export function toVNode(ast: ASTNode, context: BuildContext): VNode {
 export function toVNodeDry(ast: ASTElement, context: BuildContext) {
   let rnd: ASTElement, ctx: BuildContext;
 
-  if (ast instanceof ASTComponent) {
+  if (ast.flags & ASTFlags.COMPONENT_MASK) {
     let props: any = {};
     let compAttrs = ast.normalizedAttrs(context);
-    for (let p of ast.props) {
+    for (let p of (ast as ASTComponent).props) {
       props[p] = compAttrs[p];
     }
     ctx = withContext(context, props);
-    rnd = ast.root;
+    rnd = (ast as ASTComponent).root;
   } else {
     ctx = context;
     rnd = ast;
