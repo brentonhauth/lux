@@ -26,7 +26,7 @@ export const enum StatementType {
 }
 
 const containsTickRE = /(`)/g;
-const splitCompOpsRE = /(?:>|<|!=|==)=?/;
+const splitCompOpsRE = /\s*((?:>|<|!=|==)=?)\s*/;
 
 type ExpFn = (state?: State, additional?: State) => any;
 
@@ -108,8 +108,7 @@ function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true)
     const q = stripQuotes(a);
 
     if (a !== q) { // checks if it was wrapped in quotes
-      r.set(q);
-      return true;
+      return r.set(q);
     } else {
       return false;
     }
@@ -192,20 +191,21 @@ function tryForSimple(exp: string): Statement {
     }
     throw StatementType.COMPLEX;
   }
-  const op = <ComparisonOp>arrayUnwrap(splitCompOpsRE.exec(exp));
+
+  const vals = exp.split(splitCompOpsRE);
+  if (vals.length !== 3) {
+    throw StatementType.COMPLEX;
+  }
+
+  const [lval, op, rval] = vals;
   if (isUndef(op) || !(op in comparisonOps)) {
     throw StatementType.COMPLEX;
   }
 
-  const vals = exp.split(splitCompOpsRE);
-  if (vals.length !== 2) {
-    throw StatementType.COMPLEX;
-  }
-
   const left = ref<BasicType>();
-  const leftIsCast = simpleCastWrap(vals[0], left);
+  const leftIsCast = simpleCastWrap(lval, left);
   const right = ref<BasicType>();
-  const rightIsCast = simpleCastWrap(vals[1], right);
+  const rightIsCast = simpleCastWrap(rval, right);
   
   if (leftIsCast && rightIsCast) {
     const comp = comparisonOps[<ComparisonOp>op];
@@ -217,7 +217,7 @@ function tryForSimple(exp: string): Statement {
     let type = leftIsCast ? StatementType.LEFT_CAST : StatementType.LEFT_LOOKUP;
     type |= rightIsCast ? StatementType.RIGHT_CAST : StatementType.RIGHT_LOOKUP;
 
-    const val: OperationArray = [left.value, op, right.value];
+    const val: OperationArray = [left.value, <ComparisonOp>op, right.value];
     return { type, val };
   }
 }

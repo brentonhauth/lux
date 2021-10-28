@@ -36,7 +36,7 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
     const elm = <Element>el;
 
     const children: Array<ASTNode> = [];
-    let flags = ref(0);
+    const flags = ref(0);
     let inIf = false;
     let prev: ASTElement = null;
 
@@ -94,6 +94,8 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
         if (isDef(childAttrs.loop)) {
           parseLoop(child);
           sanitizeFunctoinalAttrs(child, 'loop');
+        } else {
+          sanitizeFunctoinalAttrs(child);
         }
         children.push(child);
       }
@@ -199,14 +201,13 @@ function normalizeStyle(el: Element, style: string, isBound: boolean) {
   return vnodeStyle;
 }
 
-function sanitizeFunctoinalAttrs(ast: ASTElement, keep: string) {
+function sanitizeFunctoinalAttrs(ast: ASTElement, keep?: string) {
   const el = <Element>ast.$el;
   for (let u of functionalAttrs) {
-    if (u !== keep && u in ast.attrs) {
-      warn(`Cannot have "${u}" attribute with "${keep}".`);
-    }
-    
     if (dom.hasAttr(el, u)) {
+      if (keep && u !== keep) {
+        warn(`Cannot have "${u}" attribute with "${keep}".`);
+      }
       delete ast.attrs[u];
       dom.delAttr(el, u);
     }
