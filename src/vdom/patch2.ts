@@ -1,7 +1,8 @@
+import { dom } from "../helpers/dom";
 import { isCommentVNode, isTextVNode } from "../helpers/is";
 import { ignoreCaseEquals } from "../helpers/strings";
 import { $render } from "./render";
-import { VNode } from "./vnode";
+import { VNode, VNodeAttrs } from "./vnode";
 
 function replace(vOld: VNode, vNew: VNode) {
   let e = $render(vNew);
@@ -29,7 +30,28 @@ function patch(vOld: VNode, vNew: VNode) {
       replace(vOld, vNew);
     } else {
       patchChildren(vOld.$el, vOld.children, vNew.children);
+      patchAttrs(vOld.$el, vOld.data?.attrs, vNew.data?.attrs);
       vNew.$el = vOld.$el;
+    }
+  }
+}
+
+
+function patchAttrs(elm: Element, oldAttrs: VNodeAttrs, newAttrs: VNodeAttrs) {
+  oldAttrs = oldAttrs || {};
+  newAttrs = newAttrs || {};
+
+  for (let a in oldAttrs) {
+    if (!(a in newAttrs)) {
+      dom.delAttr(elm, a);
+    } else if (oldAttrs[a] !== newAttrs[a]) {
+      dom.setAttr(elm, a, newAttrs[a]);
+    }
+  }
+
+  for (let n in newAttrs) {
+    if (!(n in oldAttrs)) {
+      dom.setAttr(elm, n, newAttrs[n]);
     }
   }
 }
@@ -43,9 +65,7 @@ function patchChildren(parentElm: Element, vOld: VNode[], vNew: VNode[]) {
 
   if (vOld.length > vNew.length) {
     if (vNew.length === 0) {
-      while (parentElm.childNodes.length) {
-        parentElm.removeChild(parentElm.lastChild);
-      }
+      dom.removeAllChildren(parentElm);
     } else {
       for (let i = vOld.length - 1; i >= vNew.length; --i) {
         parentElm.removeChild(parentElm.lastChild);
