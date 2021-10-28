@@ -13,6 +13,7 @@ import { isArray, isDef, isString, isUndef } from './helpers/is';
 import { ArrayOrSingle, Key, RenderFn, State } from './types';
 import { $component, Component, ComponentOptions } from './vdom/component';
 import { diff } from './vdom/patch';
+import { difference } from './vdom/patch2';
 import { $mount, $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
 
@@ -95,8 +96,9 @@ class LuxApp {
       this._root.replaceWith(e);
       this._root = e;
     } else {
-      const patchFn = diff(this._v, v);
-      this._root = patchFn(this._root);
+      // const patchFn = diff(this._v, v);
+      // this._root = patchFn(this._root);
+      difference(this._v, v);
     }
     // console.log(this._v, v);
     this._v = v;

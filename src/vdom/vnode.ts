@@ -43,7 +43,7 @@ export interface VNode {
   $el?: Element;
   flags?: VNodeFlags;
   data?: VNodeData;
-  children?: VNodeChildren;
+  children?: Array<VNode>;
 }
 
 export interface TextVNode extends VNode {
