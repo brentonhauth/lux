@@ -5,6 +5,7 @@ import { toVNode } from './compiler/ast/toVnode';
 import { compileFromDOM } from './compiler/compiler';
 import { evalStatement, parseStatement } from './compiler/parser';
 import { BuildContext, createContext } from './core/context';
+import { Dataset } from './core/dataset';
 import { warn } from './core/logging';
 import { h } from './h';
 import { dom } from './helpers/dom';
@@ -139,6 +140,7 @@ const Lux = {
   $createApp,
   getState,
   getInstance,
+  Dataset,
 
   // Just here for testing
   parseStatement,

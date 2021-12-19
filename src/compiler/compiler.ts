@@ -37,8 +37,6 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
 
     const children: Array<ASTNode> = [];
     const flags = ref(0);
-    let inIf = false;
-    let prev: ASTElement = null;
 
     const { attrs, style, events } = compileAttrs(elm, flags);
 
@@ -61,6 +59,8 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
       }
     }
 
+    let prev: ASTElement = null;
+
     for (let i = 0; i < elm.childNodes.length; ++i) {
       const childElm = <Element>elm.childNodes[i];
       const compiled = compileFromDOM(childElm, context);
@@ -68,7 +68,7 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
         continue;
       } else if (compiled.type !== ASTType.ELEMENT) {
         children.push(compiled);
-        inIf = false;
+        prev = null;
         continue;
       }
 
@@ -76,21 +76,19 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
       const childAttrs = child.attrs;
 
       if (isDef(childAttrs.if)) {
-        inIf = true;
         addIfStatement(prev = child, 'if');
         children.push(child);
-      } else if (inIf && isDef(childAttrs.elif)) {
-        prev.if.next = child;
+      } else if (isDef(prev) && isDef(childAttrs.elif)) {
+        prev.if.else = child;
         addIfStatement(prev = child, 'elif');
         child.flags |= ASTFlags.ELIF;
-      } else if (inIf && isDef(childAttrs.else)) {
-        prev.if.next = child;
+      } else if (isDef(prev) && isDef(childAttrs.else)) {
+        prev.if.else = child;
         child.flags |= ASTFlags.ELSE;
         sanitizeFunctoinalAttrs(child, 'else');
-        inIf = false;
         prev = null;
       } else {
-        inIf = false;
+        prev = null;
         if (isDef(childAttrs.loop)) {
           parseLoop(child);
           sanitizeFunctoinalAttrs(child, 'loop');
@@ -112,7 +110,7 @@ function _compileFromDOM(el: Element|Node, context: BuildContext, isRoot=false):
 function addIfStatement(ast: ASTElement, attr: string) {
   const raw = String(ast.attrs[attr]).trim();
   const exp = parseStatement(raw);
-  ast.if = { raw, exp, next: null };
+  ast.if = { raw, exp, else: null };
   ast.flags |= ASTFlags.IF;
   sanitizeFunctoinalAttrs(ast, attr);
 }

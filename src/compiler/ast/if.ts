@@ -8,7 +8,7 @@ import { ASTElement } from "./astelement";
 export interface IfCondition {
   raw?: string;
   exp?: Statement;
-  next?: ASTElement;
+  else?: ASTElement;
 }
 
 export function processIf(ast: ASTElement, context: BuildContext) {
@@ -22,7 +22,7 @@ export function processIf(ast: ASTElement, context: BuildContext) {
     if (evalStatement(ast.if.exp, state, additional)) {
       return ast;
     } else {
-      ast = ast.if.next;
+      ast = ast.if.else;
     }
   }
   return ast;
