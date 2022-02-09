@@ -1,8 +1,7 @@
 
-import { AnyFunction, Primitive, UndefType } from "../types";
+import * as ast from "../compiler/ast/astelement";
+import { AnyFunction, Simple, UndefType } from "../types";
 import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from "../vdom/vnode";
-import { dom } from "./dom";
-import { cached } from "./functions";
 
 const whitespacesRE = /^\s*$/;
 const validVarRE = /^[_a-z$]+[\w$]*$/i;
@@ -54,7 +53,7 @@ export function isBoolean(a: any): a is boolean {
   return typeof a === 'boolean';
 }
 
-export function isPrimitive(a: any): a is Primitive {
+export function isSimple(a: any): a is Simple {
   return (
     typeof a === 'string' ||
     typeof a === 'number' ||
@@ -100,4 +99,20 @@ export function isTextVNode(a: any): a is TextVNode {
 
 export function isCommentVNode(a: any): a is CommentVNode {
   return isVNode(a) && a.tag === UniqueVNodeTags.COMMENT;
+}
+
+export function isASTText(a: ast.ASTNode): a is ast.ASTText {
+  return a.type === ast.ASTType.TEXT;
+}
+
+export function isASTExpression(a: ast.ASTNode): a is ast.ASTExpression {
+  return a.type === ast.ASTType.EXPRESSION;
+}
+
+export function isASTElement(a: ast.ASTNode): a is ast.ASTElement {
+  return a.type === ast.ASTType.ELEMENT;
+}
+
+export function isASTComponent(a: ast.ASTNode): a is ast.ASTComponent {
+  return (a.flags & ast.ASTFlags.COMPONENT_MASK) !== 0;
 }

@@ -1,10 +1,11 @@
-import { safeGet } from "./functions";
+import { cached, safeGet } from "./functions";
 import { isString, isUndefOrEmpty } from "./is";
 
 const twoPlusSpacesRE = /\s{2,}/;
 const removeDoubleCurlsRE = /^\{\{\s*(?<exp>.*)\s*\}\}$/;
 const unicodeRE = /^u[\d]{4}$/;
 const hexRE = /^x[a-fA-F\d]{2}$/;
+const capitalizeRE = /(^|\s|-)[a-z]/g;
 
 const EMPTY_STRING = '';
 const WHITE_SPACE = '\x20';
@@ -22,9 +23,8 @@ export const enum CharCode {
 };
 
 
-const _toString = Object.prototype.toString;
-export function toString(a: any) {
-  return _toString.call(a);
+export function stringWrap(a: any): string {
+  return isString(a) ? a : String(a);
 }
 
 export function trimAll(s: string|any) {
@@ -37,7 +37,7 @@ export function safeLower(s: string|any) {
   return isString(s) ? s.toLowerCase() : s;
 }
 
-export function stripParens(s: string, deep=true): string {
+function stripParens(s: string, deep=true): string {
   s = s.trim();
   if (s.length < 2) {
     return s;
@@ -52,7 +52,15 @@ export function stripParens(s: string, deep=true): string {
   }
 }
 
-export function stripQuotes(s: string) {
+export const stripParensDeep = cached((s: string) => {
+  return stripParens(s, true);
+});
+
+export const stripParensShallow = cached((s: string) => {
+  return stripParens(s, false);
+});
+
+export const stripQuotes = cached((s: string) => {
   if (s.length < 2) {
     return s;
   }
@@ -67,7 +75,11 @@ export function stripQuotes(s: string) {
   } else {
     return s;
   }
-}
+});
+
+export const capitalize = cached((s: string) => {
+  return s.replace(capitalizeRE, c => c.toUpperCase());
+});
 
 export function ignoreCaseEquals(a: string, b: string) {
   return a.toLowerCase() === b.toLowerCase();
@@ -77,7 +89,7 @@ export function safeIgnoreCaseEquals(a: string, b: string) {
   return safeLower(a) === safeLower(b);
 }
 
-export function stripDoubleCurls(s: string) {
+export const stripDoubleCurls = cached((s: string) => {
   const t = s.trim();
   if (t.length < 4) {
     // Invalid
@@ -85,9 +97,9 @@ export function stripDoubleCurls(s: string) {
   }
   const result = removeDoubleCurlsRE.exec(t);
   return safeGet<string>(result, 'groups.exp', EMPTY_STRING);
-}
+});
 
-export function toEscapedChar(char: string) {
+export const toEscapedChar = cached((char: string) => {
   if (isUndefOrEmpty(char)) {
     return char;
   } else if (char.length === 1) {
@@ -110,4 +122,4 @@ export function toEscapedChar(char: string) {
   } else {
     return char;
   }
-}
+});

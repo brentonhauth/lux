@@ -1,7 +1,6 @@
 import { BuildContext } from "../../core/context";
 import { isDef, isUndef } from "../../helpers/is";
 import { getState } from "../../lux";
-import { State } from "../../types";
 import { VNode, vnode } from "../../vdom/vnode";
 import { evalStatement } from "../parser";
 import { ASTExpression } from "./astelement";

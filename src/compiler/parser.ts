@@ -1,9 +1,9 @@
 import { arrayUnwrap } from "../helpers/array";
-import { lookup } from "../helpers/functions";
-import { isBoolean, isNumber, isPrimitive, isString, isUndef, isValidVariable } from "../helpers/is";
+import { cached, lookup } from "../helpers/functions";
+import { isBoolean, isNumber, isSimple, isString, isUndef, isValidVariable } from "../helpers/is";
 import { ref, Reference } from "../helpers/ref";
-import { CharCode, stripParens, stripQuotes, toEscapedChar } from "../helpers/strings";
-import { Primitive, State, UndefType } from "../types";
+import { CharCode, stripParensDeep, stripQuotes, toEscapedChar } from "../helpers/strings";
+import { Simple, State, UndefType } from "../types";
 
 export const enum StatementType {
   // When there's no function (either a lookup or cast)
@@ -52,12 +52,14 @@ const comparisonOps: Record<ComparisonOp,(l:any,r:any)=>boolean> = Object.freeze
   [ComparisonOp.LE]: (l: any, r: any) => l <= r,
 });
 
-type BasicType = Primitive|UndefType
+type BasicType = Simple|UndefType
 type OperationArray = [BasicType, ComparisonOp, BasicType];
+type StatementVal = ExpFn|BasicType|OperationArray;
 
 export interface Statement {
   type: StatementType;
-  val: ExpFn|BasicType|OperationArray,
+  val: StatementVal,
+  uses?: Array<string>
 }
 
 export function evalStatement(statement: Statement, state: State, additional?: State) {
@@ -85,7 +87,7 @@ export function evalStatement(statement: Statement, state: State, additional?: S
 
 function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true): boolean {
   if (isString(a)) {
-    a = stripParens(a);
+    a = stripParensDeep(a);
     if (!isNaN(a)) { // is number
       return r.set(Number(a));
     }
@@ -113,18 +115,33 @@ function checkIfCastable(a: any, r: Reference<BasicType>, allowEmptyString=true)
       return false;
     }
   } else if (isNumber(a) || isBoolean(a) || isUndef(a)) {
-    r.set(a);
-    return true;
+    return r.set(a);
   } else {
     return false;
   }
 }
 
+function _statement(type: StatementType, val: StatementVal, uses?: Array<string>): Statement {
+  if (type & StatementType.LOOKUP) {
+    uses = uses || [];
+    if (type & StatementType.SINGLE) {
+      uses.push(<string>val);
+    } else {
+      if (type & StatementType.LEFT_LOOKUP) {
+        uses.push((<any>val)[0]);
+      }
+      if (type & StatementType.RIGHT_LOOKUP) {
+        uses.push((<any>val)[2]);
+      }
+    }
+  }
+  return { type, val, uses };
+}
+
+
 function createComplex(exp: string): Statement {
-  return {
-    type: StatementType.COMPLEX,
-    val: <ExpFn>new Function(`with(this){return ${exp}}`),
-  };
+  const val = <ExpFn>new Function(`with(this){return ${exp}}`);
+  return _statement(StatementType.COMPLEX, val);
 }
 
 export function pruneString(exp: string, r: Reference<string>, startIndex=0): boolean {
@@ -183,7 +200,7 @@ export function pruneString(exp: string, r: Reference<string>, startIndex=0): bo
 
 function tryForSimple(exp: string): Statement {
   function simpleCastWrap(val: string, cast: Reference<BasicType|Statement>) {
-    if (checkIfCastable(val=stripParens(val), <Reference<BasicType>>cast, false)) {
+    if (checkIfCastable(val=stripParensDeep(val), <Reference<BasicType>>cast, false)) {
       return true;
     } else if (isValidVariable(val)) {
       cast.set(val);
@@ -209,16 +226,13 @@ function tryForSimple(exp: string): Statement {
   
   if (leftIsCast && rightIsCast) {
     const comp = comparisonOps[<ComparisonOp>op];
-    return {
-      type: StatementType.STRAIGHT_CAST,
-      val: comp(left.value, right.value),
-    };
+    return _statement(StatementType.STRAIGHT_CAST, comp(left.value, right.value));
   } else {
     let type = leftIsCast ? StatementType.LEFT_CAST : StatementType.LEFT_LOOKUP;
     type |= rightIsCast ? StatementType.RIGHT_CAST : StatementType.RIGHT_LOOKUP;
 
     const val: OperationArray = [left.value, <ComparisonOp>op, right.value];
-    return { type, val };
+    return _statement(type, val);
   }
 }
 
@@ -227,25 +241,19 @@ function tryForSimple(exp: string): Statement {
  * Be careful with passing strings
  * @param exp
  */
-export function parseStatement(exp: string): Statement {
+export const parseStatement = cached((exp: string): Statement => {
   exp = exp.trim();
   const r = ref<BasicType>();
   if (checkIfCastable(exp, r)) {
-    return {
-      type: StatementType.STRAIGHT_CAST,
-      val: r.value
-    };
+    return _statement(StatementType.STRAIGHT_CAST, r.value);
   } else if (containsTickRE.test(exp)) {
     return createComplex(exp);
   }
 
-  exp = stripParens(exp);
+  exp = stripParensDeep(exp);
 
   if (isValidVariable(exp)) {
-    return {
-      type: StatementType.STRAIGHT_LOOKUP,
-      val: exp
-    };
+    return _statement(StatementType.STRAIGHT_LOOKUP, exp);
   } else {
     try {
       return tryForSimple(exp);
@@ -257,5 +265,4 @@ export function parseStatement(exp: string): Statement {
       }
     }
   }
-
-}
+});

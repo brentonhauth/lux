@@ -1,21 +1,38 @@
-import { Key, Primitive, State } from "../types";
+import { AnyFunction, Key, Simple, State } from "../types";
 import { VNode, VNodeAttrs } from "../vdom/vnode";
 import { arrayWrap } from "./array";
 import { dom } from "./dom";
 import { isArray, isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
 
-export function cached<T>(fn: (p: string|number)=>T): (p:string|number)=>T {
-  const cache: Record<string|number, any> = Object.create(null);
-  return function _cached(p: string|number) {
-    const value = cache[p];
-    return isDef(value) ? value : (cache[p] = fn(p));
+const pureNumRE = /^([1-9]\d*|0)$/;
+
+export function cached<T>(fn: (p: string)=>T): (p:string)=>T {
+  const cache: Record<string, T> = Object.create(null);
+  return function(p: string) {
+    return p in cache ? cache[p] : (cache[p] = fn(p));
   };
 }
 
+export function once<T extends AnyFunction>(fn: T): T {
+  let call = true;
+  return <T>(function() {
+    if (call) {
+      call = false;
+      return fn.apply(this, arguments);
+    }
+  });
+}
+
 const splitPath = cached((path: string) => {
-  return path.trim().split('.');
+  const absPath = path.trim().split('.');
+  return absPath.map(s => pureNumRE.test(s) ? Number(s) : s);
 });
 
+/**
+ * Based on lodash's "_.get" function
+ * Licensed under the MIT License
+ * https://github.com/lodash/lodash/blob/HEAD/LICENSE
+ */
 export function safeGet<T>(obj: any, path: string, default0?: T): T {
   const absPath = splitPath(path);
   for (let p of absPath) {
@@ -25,8 +42,7 @@ export function safeGet<T>(obj: any, path: string, default0?: T): T {
       return default0;
     }
   }
-
-  return <T>obj;
+  return obj;
 }
 
 export function forIn(object: any, fn: (k: Key, v: any) => void) {
@@ -59,8 +75,6 @@ export function callFn<T>(obj: any, name: string, params?: any[], default0?: T):
 export function noop() {}
 
 export function identity<T>(a: T): T { return a; }
-
-// export function compare(object: Record<Key, any>, object: Record<Key, any>) {}
 
 export function applyAllAttrs(node: Element|VNode, attrs?: VNodeAttrs) {
   let el: Element;
@@ -101,7 +115,7 @@ export function compareDeep(a: any, b: any) {
       }
       return true;
     }
-  } else if (isObjectLike(a)) {
+  } else if (isObjectLike(a)) { // optimized: same if isObject is called
     if (!isObject(b)) return false;
     const aKeys = Object.keys(a);
     const bKeys = Object.keys(b);

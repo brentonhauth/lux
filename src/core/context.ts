@@ -1,12 +1,18 @@
-import { applyAll } from "../helpers/functions";
-import { isDef, isObject } from "../helpers/is";
+import { isObject } from "../helpers/is";
 import { State } from "../types";
 import { Component } from "../vdom/component";
 
-export interface BuildContext {
-  state: State,
+
+export interface Context {
   components: Array<Component>
+}
+
+export interface BuildContext extends Context {
+  state: State,
   additional?: State,
+}
+
+export interface CompileContext extends Context {
 }
 
 export function createContext(state: State, components: Array<Component>, additional?: State): BuildContext {
@@ -18,6 +24,10 @@ export function withContext(context: BuildContext, add: State, merge=true): Buil
     add = { ...(context.additional), ...add };
   }
   return _context(context.state, context.components, add);
+}
+
+export function createCompileContext(): CompileContext {
+  return <any>{};
 }
 
 function _context(

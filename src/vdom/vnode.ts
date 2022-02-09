@@ -1,7 +1,8 @@
 
 import { arrayWrap, normalizedArray } from "../helpers/array";
 import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
-import { ArrayOrSingle } from "../types";
+import { stringWrap } from "../helpers/strings";
+import { ArrayOrSingle, Simple } from "../types";
 
 export const enum UniqueVNodeTags {
   COMMENT = '#comment',
@@ -85,15 +86,15 @@ export function vnode(tag: string, data?: VNodeData|VNodeChildren, children?: VN
   return _vnode(tag, 0, null, key, null, data, <VNode[]>children);
 }
 
-vnode.text = function(text: string|number|boolean): TextVNode {
-  return <TextVNode>_vnode(UniqueVNodeTags.TEXT, VNodeFlags.TEXT, String(text));
+vnode.text = function(text: Simple): TextVNode {
+  return <TextVNode>_vnode(UniqueVNodeTags.TEXT, VNodeFlags.TEXT, stringWrap(text));
 };
 
 vnode.comment = function(_comment?: string): CommentVNode {
   return <CommentVNode>_vnode(UniqueVNodeTags.COMMENT, VNodeFlags.COMMENT, _comment);
 };
 
-vnode.clone = function(node: VNode, flags?: VNodeCloneFlags): VNode {
+export function cloneVNode(node: VNode, flags?: VNodeCloneFlags): VNode {
   if (isUndef(node)) {
     return null;
   } else if (node.tag === UniqueVNodeTags.TEXT) {
@@ -102,9 +103,9 @@ vnode.clone = function(node: VNode, flags?: VNodeCloneFlags): VNode {
     return vnode.comment();
   }
 
-  const children = arrayWrap(node.children).map(c => vnode.clone(<VNode>c));
+  const children = arrayWrap(node.children).map(c => cloneVNode(<VNode>c));
   return _vnode(node.tag, node.flags, null, node.key, null, node.data, children);
-};
+}
 
 function _vnode(
   tag: string,

@@ -5,7 +5,7 @@ import { toVNode } from './compiler/ast/toVnode';
 import { compileFromDOM } from './compiler/compiler';
 import { evalStatement, parseStatement } from './compiler/parser';
 import { BuildContext, createContext } from './core/context';
-import { Dataset } from './core/dataset';
+import { Dataset, proxyWrap } from './core/dataset';
 import { warn } from './core/logging';
 import { h } from './h';
 import { dom } from './helpers/dom';
@@ -45,7 +45,7 @@ class LuxApp {
     this._render = options.render?.bind(this);
     this._data = options.data?.bind(this) || noop;
     this._options.render = <any>noop;
-    this._state = options.data?.() || {};
+    this._state = null;// options.data?.() || {};
     this._components = {};
     this._context = createContext(this._state, []);
     this._root = null;
@@ -112,9 +112,16 @@ class LuxApp {
     }
     this._root = el;
     // this._v = vnode(el.tagName, );
+
+    const onUpdate = (object: any, name: string, old: any, value: any) => {
+      this.$update({ [name]: value });
+    };
+
+    const state = this._data?.() || {};
+    this._context.state = proxyWrap(state, onUpdate);
     this._ast = <ASTElement>compileFromDOM(el, this._context);
     this._render = () => toVNode(this._ast, this._context);
-    this.$update(this._state);
+    this.$update({});
     return this;
   }
 }
@@ -141,6 +148,7 @@ const Lux = {
   getState,
   getInstance,
   Dataset,
+  proxyWrap,
 
   // Just here for testing
   parseStatement,
