@@ -1,14 +1,12 @@
 
-import { BuildContext, withContext } from "../../core/context";
-import { normalizedArray, flattenArray } from "../../helpers/array";
-import { lookup } from "../../helpers/functions";
-import { isDef, isString, isUndef } from "../../helpers/is";
-import { trimAll } from "../../helpers/strings";
-import { getState } from "../../lux";
-import { State } from "../../types";
-import { VNode, vnode } from "../../vdom/vnode";
-import { ASTComponent, ASTElement, ASTFlags } from "./astelement";
-import { toVNodeDry } from "./toVnode";
+import { BuildContext, withContext } from '@lux/core/context';
+import { warn } from '@lux/core/logging';
+import { cached, lookup } from '@lux/helpers/functions';
+import { isString, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { trimAll } from '@lux/helpers/strings';
+import { VNode } from '@lux/vdom/vnode';
+import { ASTElement } from './astelement';
+import { toVNodeDry } from './toVnode';
 
 const loopSplitRE = /\s+(?:of|in)\s+/;
 
@@ -22,7 +20,7 @@ export interface LoopCondition {
 
 export function processLoop(ast: ASTElement, context: BuildContext): Array<VNode> {
   if (isUndef(ast.loop)) {
-    console.warn('Is not loop');
+    warn('Is not loop');
     return [];
   }
 
@@ -34,41 +32,28 @@ export function processLoop(ast: ASTElement, context: BuildContext): Array<VNode
   if (isString(list)) {
     list = list.split('');
   }
-  if (isUndef(list) || list.length === 0) {
+  if (isUndefOrEmpty(list)) {
     return [];
   }
 
-  const output = [];
+  const output = new Array<VNode>(list.length);
+  const iter = { [alias]: <any>null };
   for (let i in list) {
-    let ctx = withContext(context, { [alias]: list[i] });
+    iter[alias] = list[i];
+    let ctx = withContext(context, iter);
     output.push(toVNodeDry(ast, ctx));
-    // let children = normalizedArray(rend.children).map(c => c.toVNode(ctx));
-    // let v = vnode(rend.tag, {
-    //   attrs: rend.normalizedAttrs(ctx),
-    //   style: rend.style,
-    // }, <any>children);
-    // output.push(v);
   }
   return output;
 }
 
 
-export function parseLoop(ast: ASTElement) {
-
-  const exp = trimAll(ast.attrs.loop);
+export const parseLoop = cached((exp: string): LoopCondition => {
+  exp = trimAll(exp);
   const [alias, items] = exp.split(loopSplitRE);
-
 
   if (!isString(alias) || !isString(items)) {
     throw new Error('Could not parse loop');
   }
 
-  const loop: LoopCondition = {
-    exp,
-    alias,
-    items,
-  };
-
-  ast.loop = loop;
-  ast.flags |= ASTFlags.LOOP;
-}
+  return { exp, alias, items };
+});

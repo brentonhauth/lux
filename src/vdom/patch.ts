@@ -10,6 +10,7 @@ import { ignoreCaseEquals } from "../helpers/strings";
 const removePatch: PatchFunction = $el => void $el.remove();
 // <></>
 
+/** @deprecated */
 export function diff(oldNode: VNode|string, newNode: VNode|string): PatchFunction {
   return _diff2(<VNode>oldNode, <VNode>newNode);
 }

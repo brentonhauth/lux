@@ -1,5 +1,4 @@
-import { isDef } from "./is";
-import { safeIgnoreCaseEquals, safeLower } from "./strings";
+import { safeIgnoreCaseEquals } from './strings';
 
 interface DomApi {
   select(query: string): Element;

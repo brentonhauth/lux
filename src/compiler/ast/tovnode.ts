@@ -1,12 +1,13 @@
-import { BuildContext, withContext } from "../../core/context";
-import { arrayUnwrap, flattenArray } from "../../helpers/array";
-import { isDef, isUndef, isUndefOrEmpty } from "../../helpers/is";
-import { ArrayOrSingle } from "../../types";
-import { VNode, vnode } from "../../vdom/vnode";
-import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./astelement";
-import { processExpression } from "./expression";
-import { processIf } from "./if";
-import { processLoop } from "./loop";
+import { BuildContext, withContext } from '@lux/core/context';
+import { arrayUnwrap, flattenArray } from '@lux/helpers/array';
+import { isASTComponent, isDef, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { ArrayOrSingle } from '@lux/types';
+import { VNode, vnode, VNodeAttrs } from '@lux/vdom/vnode';
+import { evalStatement } from '@lux/compiler/parser';
+import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from './astelement';
+import { processExpression } from './expression';
+import { processIf } from './if';
+import { processLoop } from './loop';
 
 
 
@@ -26,17 +27,17 @@ export function toVNode(ast: ASTNode, context: BuildContext): VNode {
  * @param context
  * @returns
  */
-export function toVNodeDry(ast: ASTElement, context: BuildContext) {
+export function toVNodeDry(ast: ASTElement, context: BuildContext): VNode {
   let rnd: ASTElement, ctx: BuildContext;
 
-  if (ast.flags & ASTFlags.COMPONENT_MASK) {
+  if (isASTComponent(ast)) {
     let props: any = {};
-    let compAttrs = ast.normalizedAttrs(context);
-    for (let p of (ast as ASTComponent).props) {
+    let compAttrs = evalAttrs(ast, context);
+    for (let p of ast.props) {
       props[p] = compAttrs[p];
     }
     ctx = withContext(context, props);
-    rnd = (ast as ASTComponent).root;
+    rnd = ast.root;
   } else {
     ctx = context;
     rnd = ast;
@@ -44,7 +45,7 @@ export function toVNodeDry(ast: ASTElement, context: BuildContext) {
 
   const children = rnd.children.map(c => _toVNode(c, ctx));
   return vnode(rnd.tag, {
-    attrs: rnd.normalizedAttrs(ctx),
+    attrs: evalAttrs(rnd, ctx),
     style: <any>rnd.style,
   }, flattenArray(children));
 }
@@ -64,7 +65,7 @@ function _toVNode(ast: ASTNode, context: BuildContext): ArrayOrSingle<VNode> {
 
 
 function textToVNode(ast: ASTText) {
-  return vnode.text(ast.text);
+  return vnode.text(String(ast.text));
 }
 
 function expToVNode(ast: ASTExpression, context: BuildContext) {
@@ -89,3 +90,11 @@ function elmToVNode(ast: ASTElement, context: BuildContext): ArrayOrSingle<VNode
   return toVNodeDry(ast, context);
 }
 
+function evalAttrs(ast: ASTElement, context: BuildContext): VNodeAttrs {
+  const attrs = { ...(ast.staticAttrs) };
+  let { state, additional } = context;
+  for (let name in ast.dynamicAttrs) {
+    attrs[name] = evalStatement(ast.dynamicAttrs[name], state, additional);
+  }
+  return <VNodeAttrs>attrs;
+}

@@ -1,16 +1,15 @@
-import { BuildContext, withContext } from "../../core/context";
-import { warn } from "../../core/logging";
-import { arrayUnwrap, arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
-import { isBlankString, isDef, isPrimitive, isUndef, isUndefOrEmpty } from "../../helpers/is";
-import { stripDoubleCurls, trimAll } from "../../helpers/strings";
-import { getState } from "../../lux";
-import { ArrayOrSingle, Primitive, State } from "../../types";
-import { Component } from "../../vdom/component";
-import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
-import { parseStatement, Statement } from "../parser";
-import { processExpression } from "./expression";
-import { IfCondition, processIf } from "./if";
-import { LoopCondition, processLoop } from "./loop";
+import { BuildContext } from '@lux/core/context'
+import { warn } from '@lux/core/logging';
+import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from '@lux/helpers/array';
+import { isDef, isSimple, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { stripDoubleCurls } from '@lux/helpers/strings';
+import { ArrayOrSingle, Simple } from '@lux/types';
+import { Component } from '@lux/vdom/component';
+import { vnode, VNode, VNodeAttrs, VNodeStyle } from '@lux/vdom/vnode';
+import { parseStatement, Statement } from '@lux/compiler/parser';
+import { processExpression } from './expression';
+import { IfCondition, processIf } from './if';
+import { LoopCondition, processLoop } from './loop';
 
 let AST_ID = 0;
 
@@ -23,13 +22,15 @@ export const enum ASTType {
 export const enum ASTFlags {
   IF = 1,
   ELSE = 2,
-  ELIF = IF|ELSE,
+  ELIF = 3, // IF|ELSE
   BIND = 4,
   LOOP = 8,
   STATIC = 16,
   COMPONENT_MASK = 32,
   ROOT = 64,
-  ABSOLUTE_ROOT = ROOT|128
+  ABSOLUTE_ROOT = 192, // ROOT|128
+  DYNAMIC_CLASSES = 256,
+  DYNAMIC_STYLE = 512,
 }
 
 export abstract class ASTNode {
@@ -64,6 +65,7 @@ export abstract class ASTNode {
     return this.parent.children[index + offset];
   }
 
+  /** @deprecated */
   public abstract toVNode(context: BuildContext): ArrayOrSingle<VNode>;
   public markIfStatic() {
     if (this.type === ASTType.TEXT) {
@@ -74,20 +76,32 @@ export abstract class ASTNode {
 
 export class ASTElement extends ASTNode {
   public tag: string;
-  public attrs: Record<string,{bind:string}|Primitive>;
+  /** @deprecated */
+  public attrs: Record<string,{bind:string}|Simple>;
+  public staticAttrs: Record<string, Simple>;
+  public dynamicAttrs: Record<string, Statement>;
   public style: VNodeStyle;
+  public classes: Array<string>;
   public children: Array<ASTNode>;
   public if?: IfCondition;
   public loop?: LoopCondition;
   public watching?: Array<string>;
   public bindings?: Record<string, string>;
 
-  constructor(el: Element, tag: string, attrs: Record<string,{bind:string}|Primitive>, children: ArrayOrSingle<ASTNode>) {
+  constructor(
+    el: Element,
+    tag: string,
+    staticAttrs: Record<string, Simple>,
+    dynamicAttrs: Record<string, Statement>,
+    style: VNodeStyle,
+    classes: Array<string>,
+    children: ArrayOrSingle<ASTNode>) {
     super(el, ASTType.ELEMENT);
     this.tag = tag;
-    this.style = <any>attrs.style;
-    if (isDef(this.style)) delete attrs.style;
-    this.attrs = attrs;
+    this.style = style;
+    this.dynamicAttrs = dynamicAttrs;
+    this.staticAttrs = staticAttrs;
+    this.classes = classes;
     this.children = arrayWrap(children);
     this.children.forEach(c => c.parent = this);
   }
@@ -102,6 +116,7 @@ export class ASTElement extends ASTNode {
     child.parent = this;
   }
 
+  /** @deprecated */
   markIfStatic() {
     let flags = this.flags & ~ASTFlags.STATIC;
     if (flags === 0) {
@@ -109,14 +124,14 @@ export class ASTElement extends ASTNode {
     }
   }
 
+  /** @deprecated */
   normalizedAttrs(context: BuildContext) {
     let { state, additional } = context;
-    state = state || getState();
     additional = additional || {};
     const attrs: VNodeAttrs = {};
     for (let name in this.attrs) {
       let attr = this.attrs[name];
-      if (isPrimitive(attr)) {
+      if (isSimple(attr)) {
         attrs[name] = attr;
       } else {
         attrs[name] = attr.bind in additional
@@ -127,6 +142,7 @@ export class ASTElement extends ASTNode {
     return attrs;
   }
 
+  /** @deprecated */
   toVNode(context: BuildContext): ArrayOrSingle<VNode> {
     let v: VNode, ast: ASTElement = this;
     if ((ast.flags & ASTFlags.IF) && !(ast.flags & ASTFlags.ELSE)) {
@@ -171,8 +187,14 @@ export class ASTComponent extends ASTElement {
   public currentProps: Record<string, any>;
   public root: ASTElement;
 
-  constructor(el: Element, component: Component, root: ASTElement, attrs: Record<string,{bind:string}|Primitive>) {
-    super(el, component.tag, attrs, []);
+  constructor(
+    el: Element,
+    component: Component,
+    root: ASTElement,
+    staticAttrs: Record<string, Simple>,
+    dynamicAttrs: Record<string, Statement>,
+    ) {
+    super(el, component.tag, staticAttrs, dynamicAttrs, {}, [], []);
     this.flags |= ASTFlags.COMPONENT_MASK;
     this.component = component;
     this.currentProps = {};
@@ -209,6 +231,7 @@ export class ASTExpression extends ASTNode {
     }
   }
 
+  /** @deprecated */
   toVNode(context: BuildContext): VNode {
     let v: VNode;
     if (isDef(this.exp)) {
@@ -229,8 +252,9 @@ export class ASTText extends ASTNode {
     this.text = text;
   }
 
+  /** @deprecated */
   toVNode(): VNode {
-    const v = vnode.text(this.text);
+    const v = vnode.text(String(this.text));
     // v.$el = <Element>this.$el;
     return v;
   }
