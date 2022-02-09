@@ -1,7 +1,7 @@
 
-import * as ast from "../compiler/ast/astelement";
-import { AnyFunction, Simple, UndefType } from "../types";
-import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from "../vdom/vnode";
+import * as ast from '@lux/compiler/ast/astelement';
+import { AnyFunction, Simple, UndefType } from '@lux/types';
+import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from '@lux/vdom/vnode';
 
 const whitespacesRE = /^\s*$/;
 const validVarRE = /^[_a-z$]+[\w$]*$/i;

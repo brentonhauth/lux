@@ -1,12 +1,12 @@
 
-import { BuildContext, withContext } from "../../core/context";
-import { warn } from "../../core/logging";
-import { cached, lookup } from "../../helpers/functions";
-import { isString, isUndef, isUndefOrEmpty } from "../../helpers/is";
-import { trimAll } from "../../helpers/strings";
-import { VNode } from "../../vdom/vnode";
-import { ASTElement } from "./astelement";
-import { toVNodeDry } from "./toVnode";
+import { BuildContext, withContext } from '@lux/core/context';
+import { warn } from '@lux/core/logging';
+import { cached, lookup } from '@lux/helpers/functions';
+import { isString, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { trimAll } from '@lux/helpers/strings';
+import { VNode } from '@lux/vdom/vnode';
+import { ASTElement } from './astelement';
+import { toVNodeDry } from './toVnode';
 
 const loopSplitRE = /\s+(?:of|in)\s+/;
 

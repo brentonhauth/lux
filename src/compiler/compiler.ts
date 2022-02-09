@@ -1,14 +1,14 @@
-import { isASTElement, isBlankString, isDef, isHtmlTag, isString, isUndef } from "../helpers/is";
-import { safeLower, stringWrap, trimAll } from "../helpers/strings";
-import { Reference, ref } from "../helpers/ref";
-import { VNodeAttrs, VNodeClass, VNodeEvents, VNodeStyle } from "../vdom/vnode";
-import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./ast/astelement";
-import { parseLoop } from "./ast/loop";
-import { warn } from "../core/logging";
-import { parseStatement } from "./parser";
-import { applyAll, safeGet } from "../helpers/functions";
-import { BuildContext, CompileContext } from "../core/context";
-import { dom } from "../helpers/dom";
+import { isASTElement, isBlankString, isDef, isHtmlTag, isString, isUndef } from '@lux/helpers/is';
+import { stringWrap, trimAll } from '@lux/helpers/strings';
+import { Reference, ref } from '@lux/helpers/ref';
+import { VNodeStyle } from '@lux/vdom/vnode';
+import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText } from './ast/astelement';
+import { parseLoop } from './ast/loop';
+import { warn } from '@lux/core/logging';
+import { parseStatement } from './parser';
+import { safeGet } from '@lux/helpers/functions';
+import { CompileContext } from '@lux/core/context';
+import { dom } from '@lux/helpers/dom';
 
 const functionalAttrs = ['loop', 'if', 'elif', 'else'];
 const specialAttrs = ['style', 'class', 'key'];

@@ -1,17 +1,15 @@
-import { BuildContext } from "../../core/context";
-// import { warn } from "../../core/logging";
+import { BuildContext } from '@lux/core/context'
 import { warn } from '@lux/core/logging';
-import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from "../../helpers/array";
-import { isDef, isSimple, isUndef, isUndefOrEmpty } from "../../helpers/is";
-import { stripDoubleCurls } from "../../helpers/strings";
-import { getState } from "../../lux";
-import { ArrayOrSingle, Simple, State } from "../../types";
-import { Component } from "../../vdom/component";
-import { vnode, VNode, VNodeAttrs, VNodeStyle } from "../../vdom/vnode";
-import { parseStatement, Statement } from "../parser";
-import { processExpression } from "./expression";
-import { IfCondition, processIf } from "./if";
-import { LoopCondition, processLoop } from "./loop";
+import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from '@lux/helpers/array';
+import { isDef, isSimple, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { stripDoubleCurls } from '@lux/helpers/strings';
+import { ArrayOrSingle, Simple } from '@lux/types';
+import { Component } from '@lux/vdom/component';
+import { vnode, VNode, VNodeAttrs, VNodeStyle } from '@lux/vdom/vnode';
+import { parseStatement, Statement } from '@lux/compiler/parser';
+import { processExpression } from './expression';
+import { IfCondition, processIf } from './if';
+import { LoopCondition, processLoop } from './loop';
 
 let AST_ID = 0;
 
@@ -129,7 +127,6 @@ export class ASTElement extends ASTNode {
   /** @deprecated */
   normalizedAttrs(context: BuildContext) {
     let { state, additional } = context;
-    state = state || getState();
     additional = additional || {};
     const attrs: VNodeAttrs = {};
     for (let name in this.attrs) {

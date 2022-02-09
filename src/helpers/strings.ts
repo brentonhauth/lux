@@ -1,5 +1,5 @@
-import { cached, safeGet } from "./functions";
-import { isString, isUndefOrEmpty } from "./is";
+import { cached, safeGet } from './functions';
+import { isString, isUndefOrEmpty } from './is';
 
 const twoPlusSpacesRE = /\s{2,}/;
 const removeDoubleCurlsRE = /^\{\{\s*(?<exp>.*)\s*\}\}$/;

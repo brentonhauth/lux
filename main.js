@@ -64,7 +64,7 @@ const checkboxes = {
 
 for (let k in checkboxes) {
   let el = checkboxes[k];
-  let initialState = Lux.getState();
+  let initialState = instance.getState();
   el.checked = !!initialState[k];
   el.addEventListener('change', function() {
     let state = {};
@@ -86,16 +86,4 @@ stringInput.addEventListener('input', () => {
 });
 
 
-let count = 0;
-setInterval(() => {
-  if (!paused) {
-    try {
-      instance.$update({ count: ++count });
-    } catch (err) {
-      console.error(err);
-    }
-  }
-}, 2500);
-
-
-}, 500);//temporary
+}, 500);

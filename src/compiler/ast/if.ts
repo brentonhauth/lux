@@ -1,9 +1,7 @@
-import { BuildContext } from "../../core/context";
-import { isDef, isUndef } from "../../helpers/is";
-import { getState } from "../../lux";
-import { State } from "../../types";
-import { evalStatement, Statement } from "../parser";
-import { ASTElement } from "./astelement";
+import { BuildContext } from '@lux/core/context';
+import { isDef, isUndef } from '@lux/helpers/is';
+import { evalStatement, Statement } from '@lux/compiler/parser';
+import { ASTElement } from './astelement';
 
 export interface IfCondition {
   raw?: string;

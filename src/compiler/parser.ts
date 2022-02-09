@@ -1,9 +1,8 @@
-import { arrayUnwrap } from "../helpers/array";
-import { cached, lookup } from "../helpers/functions";
-import { isBoolean, isNumber, isSimple, isString, isUndef, isValidVariable } from "../helpers/is";
-import { ref, Reference } from "../helpers/ref";
-import { CharCode, stripParensDeep, stripQuotes, toEscapedChar } from "../helpers/strings";
-import { Simple, State, UndefType } from "../types";
+import { cached, lookup } from '@lux/helpers/functions';
+import { isBoolean, isNumber, isString, isUndef, isValidVariable } from '@lux/helpers/is';
+import { ref, Reference } from '@lux/helpers/ref';
+import { CharCode, stripParensDeep, stripQuotes, toEscapedChar } from '@lux/helpers/strings';
+import { Simple, State, UndefType } from '@lux/types';
 
 export const enum StatementType {
   // When there's no function (either a lookup or cast)

@@ -1,9 +1,9 @@
-import { dom } from "../helpers/dom";
-import { applyAll, applyAllAttrs, forIn } from "../helpers/functions";
-import { arrayWrap } from "../helpers/array";
-import { isCommentVNode, isDef, isElement, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
-import { Renderable } from "../types";
-import { VNode } from "./vnode";
+import { isCommentVNode, isDef, isElement, isString, isTextVNode, isUndef, isVNode } from '@lux/helpers/is';
+import { applyAll, applyAllAttrs, forIn } from '@lux/helpers/functions';
+import { arrayWrap } from '@lux/helpers/array';
+import { dom } from '@lux/helpers/dom';
+import { Renderable } from '@lux/types';
+import { VNode } from './vnode';
 
 export function $render(node: Renderable): Element {
   return _render2(node);

@@ -1,8 +1,8 @@
-import { dom } from "../helpers/dom";
-import { isCommentVNode, isTextVNode } from "../helpers/is";
-import { ignoreCaseEquals } from "../helpers/strings";
-import { $render } from "./render";
-import { VNode, VNodeAttrs } from "./vnode";
+import { dom } from '@lux/helpers/dom';
+import { isCommentVNode, isTextVNode } from '@lux/helpers/is';
+import { ignoreCaseEquals } from '@lux/helpers/strings';
+import { $render } from './render';
+import { VNode, VNodeAttrs } from './vnode';
 
 function replace(vOld: VNode, vNew: VNode) {
   let e = $render(vNew);

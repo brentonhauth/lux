@@ -1,4 +1,4 @@
-import { ArrayOrSingle } from '../types';
+import { ArrayOrSingle } from '@lux/types';
 import { isArray, isDef, isUndef } from './is';
 
 

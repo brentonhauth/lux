@@ -1,5 +1,3 @@
-// <reference path="./vdom/patch.ts" />
-
 import { ASTElement } from './compiler/ast/astelement';
 import { toVNode } from './compiler/ast/toVnode';
 import { compileFromDOM } from './compiler/compiler';
@@ -9,50 +7,92 @@ import { Dataset, proxyWrap } from './core/dataset';
 import { warn } from './core/logging';
 import { h } from './h';
 import { dom } from './helpers/dom';
-import { applyAll, noop } from './helpers/functions';
+import { noop } from './helpers/functions';
 import { isArray, isDef, isString, isUndef } from './helpers/is';
-import { ArrayOrSingle, Key, RenderFn, State } from './types';
+import { Key, RenderFn, DataFn, State } from './types';
 import { $component, Component, ComponentOptions } from './vdom/component';
-import { diff } from './vdom/patch';
 import { difference } from './vdom/patch2';
-import { $mount, $render } from './vdom/render';
+import { $render } from './vdom/render';
 import { VNode } from './vdom/vnode';
-
-type DataFn = () => Record<Key, any>;
 
 interface BuildOptions {
   render: RenderFn;
   data: DataFn;
 }
 
-let _instance: LuxApp = null;
-
 class LuxApp {
-  static _instance: LuxApp;
   private _options: BuildOptions;
-  private _context: BuildContext;
-  private _root: Element;
-  private _v: VNode;
+  private _$root: Element;
   private _ast: ASTElement;
-  private _render: RenderFn;
+  private _v: VNode;
   private _data: DataFn;
-  private _state: Record<string, any>;
+  private _render: RenderFn;
   private _components: Record<string, Component>;
+  private _context: BuildContext;
 
   constructor(options: BuildOptions) {
-    LuxApp._instance = this;
     this._options = options;
-    this._render = options.render?.bind(this);
-    this._data = options.data?.bind(this) || noop;
-    this._options.render = <any>noop;
-    this._state = null;// options.data?.() || {};
-    this._components = {};
-    this._context = createContext(this._state, []);
-    this._root = null;
+    this._$root = null;
     this._v = null;
+    this._data = this._options.data?.bind(this) || noop;
+    this._render = /** @todo options.render */<any>noop;
+    this._components = {};
   }
 
-  getState(query?: ArrayOrSingle<string>) {
+  public $component(tag: string, options: ComponentOptions): this {
+    if (isDef(this._ast)) {
+      throw new Error('Cannot add component after compilation.');
+    }
+    tag = tag.toLowerCase();
+    const comp = $component(tag, options);
+    if (tag in this._components) {
+      warn('Component with tag already registered');
+    } else if (isUndef(comp)) {
+      warn('Invalid component');
+    } else {
+      this._components[tag] = comp;
+    }
+    return this;
+  }
+
+  /**
+   * @todo check if element is valid element
+   */
+  public $compile(el: Element|string): this {
+    if (isDef(this._ast)) {
+      throw new Error('Aleardy compiled.');
+    }
+    if (isString(el)) { el = dom.select('el'); }
+    this._$root = el;
+    const state = /**@todo proxyWrap*/ this._data?.call(this) || {};
+    const comps = Object.values(this._components);
+    this._context = createContext(state, comps);
+    this._ast = <ASTElement>compileFromDOM(this._$root, this._context);
+    this._render = this._astToVNode;
+    this._build();
+    return this;
+  }
+
+  private _build() {
+    const v = this._render(h);
+    if (isUndef(v)) {
+      let c = dom.createComment();
+      this._$root?.replaceWith(c);
+      this._$root = <any>c;
+    } else if (isUndef(this._v)) {
+      let e = $render(v);
+      this._$root.replaceWith(e);
+      this._$root = e;
+    } else {
+      difference(this._v, v);
+    }
+    this._v = v;
+  }
+
+  public getState(): State;
+  public getState(query: string): Key;
+  public getState(query: Array<Key>): Array<Key>;
+  public getState(query?: any) {
     if (isUndef(query)) {
       return this._context.state;
     } else if (isArray(query)) {
@@ -62,91 +102,19 @@ class LuxApp {
     }
   }
 
-  $mount(el: string|Element): LuxApp {
-    if (isString(el)) {
-      el = document.querySelector(el);
-    }
-    this._v = this._render(h);
-    this._root = $mount(this._v, el);
-    return this;
-  }
-
-  $component(tag: string, options: ComponentOptions): LuxApp {
-    const comp = $component(tag, options);
-    // TODO: check if valid component.
-    const index = this._context.components.findIndex(c => c.tag === tag);
-    if (index === -1) {
-      this._context.components.push(comp);
-      this._components[tag] = comp;
-    } else {
-      warn('Already component of that name');
-    }
-    return this;
-  }
-
-  $update(state: Record<string, any>): LuxApp {
-    applyAll(this._context.state, state);
-    const v = this._render(h);
-    // console.table([this._v, v], ['tag', '$el', 'data', 'children']);
-    if (isUndef(v)) {
-      let c = dom.createComment();
-      this._root?.replaceWith(c);
-      this._root = <any>c;
-    } else if (isUndef(this._v)) {
-      let e = $render(v);
-      this._root.replaceWith(e);
-      this._root = e;
-    } else {
-      // const patchFn = diff(this._v, v);
-      // this._root = patchFn(this._root);
-      difference(this._v, v);
-    }
-    // console.log(this._v, v);
-    this._v = v;
-    return this;
-  }
-
-  $compile(el: Element|string): LuxApp {
-    if (isString(el)) {
-      el = dom.select(el);
-    }
-    this._root = el;
-    // this._v = vnode(el.tagName, );
-
-    const onUpdate = (object: any, name: string, old: any, value: any) => {
-      this.$update({ [name]: value });
-    };
-
-    const state = this._data?.() || {};
-    this._context.state = proxyWrap(state, onUpdate);
-    this._ast = <ASTElement>compileFromDOM(el, this._context);
-    this._render = () => toVNode(this._ast, this._context);
-    this.$update({});
-    return this;
+  private _astToVNode(): VNode {
+    return toVNode(this._ast, this._context);
   }
 }
 
-export function $createApp(options: BuildOptions) {
+
+export function $createApp(options: BuildOptions): LuxApp {
   return new LuxApp(options);
 }
 
-export function getState(): State;
-export function getState(query: string): Key;
-export function getState(query: Array<Key>): Array<Key>;
-export function getState(query?: any) {
-  return isDef(LuxApp._instance) ? LuxApp._instance.getState(query) : null;
-}
-
-export function getInstance() {
-  return LuxApp._instance;
-}
-
-// loopIt();
 
 const Lux = {
   $createApp,
-  getState,
-  getInstance,
   Dataset,
   proxyWrap,
 

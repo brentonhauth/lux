@@ -1,8 +1,8 @@
 
-import { arrayWrap, normalizedArray } from "../helpers/array";
-import { isArray, isCommentVNode, isDef, isString, isTextVNode, isUndef, isVNode } from "../helpers/is";
-import { stringWrap } from "../helpers/strings";
-import { ArrayOrSingle, Simple } from "../types";
+import { isArray, isDef, isString, isUndef, isVNode } from '@lux/helpers/is';
+import { arrayWrap, normalizedArray } from '@lux/helpers/array';
+import { stringWrap } from '@lux/helpers/strings';
+import { ArrayOrSingle, Simple } from '@lux/types';
 
 export const enum UniqueVNodeTags {
   COMMENT = '#comment',

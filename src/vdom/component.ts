@@ -1,6 +1,6 @@
-import { ASTComponent, ASTElement } from '../compiler/ast/astelement';
-import { isFunc, isHtmlTag, isString } from '../helpers/is';
-import { RenderFn } from '../types';
+import { ASTElement } from '@lux/compiler/ast/astelement';
+import { isHtmlTag } from '@lux/helpers/is';
+import { RenderFn } from '@lux/types';
 
 export interface ComponentOptions {
   render?: RenderFn,

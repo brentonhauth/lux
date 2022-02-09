@@ -1,5 +1,5 @@
-import { isUndef } from "../helpers/is";
-import { State } from "../types";
+import { isUndef } from '@lux/helpers/is';
+import { State } from '@lux/types';
 
 
 type StateChangeListener<T> = (object: T, name: string, old: any, value: any) => void;

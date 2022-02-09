@@ -1,6 +1,6 @@
-import { isObject } from "../helpers/is";
-import { State } from "../types";
-import { Component } from "../vdom/component";
+import { isObject } from '@lux/helpers/is';
+import { State } from '@lux/types';
+import { Component } from '@lux/vdom/component';
 
 
 export interface Context {

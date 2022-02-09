@@ -1,8 +1,8 @@
-import { AnyFunction, Key, Simple, State } from "../types";
-import { VNode, VNodeAttrs } from "../vdom/vnode";
-import { arrayWrap } from "./array";
-import { dom } from "./dom";
-import { isArray, isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from "./is";
+import { AnyFunction, Key, State } from '@lux/types';
+import { VNode, VNodeAttrs } from '@lux/vdom/vnode';
+import { arrayWrap } from './array';
+import { dom } from './dom';
+import { isArray, isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from './is';
 
 const pureNumRE = /^([1-9]\d*|0)$/;
 

@@ -1,13 +1,13 @@
-import { BuildContext, withContext } from "../../core/context";
-import { arrayUnwrap, flattenArray } from "../../helpers/array";
-import { isASTComponent, isDef, isUndef, isUndefOrEmpty } from "../../helpers/is";
-import { ArrayOrSingle } from "../../types";
-import { VNode, vnode, VNodeAttrs } from "../../vdom/vnode";
-import { evalStatement } from "../parser";
-import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from "./astelement";
-import { processExpression } from "./expression";
-import { processIf } from "./if";
-import { processLoop } from "./loop";
+import { BuildContext, withContext } from '@lux/core/context';
+import { arrayUnwrap, flattenArray } from '@lux/helpers/array';
+import { isASTComponent, isDef, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { ArrayOrSingle } from '@lux/types';
+import { VNode, vnode, VNodeAttrs } from '@lux/vdom/vnode';
+import { evalStatement } from '@lux/compiler/parser';
+import { ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText, ASTType } from './astelement';
+import { processExpression } from './expression';
+import { processIf } from './if';
+import { processLoop } from './loop';
 
 
 
