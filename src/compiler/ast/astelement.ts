@@ -3,6 +3,7 @@ import { warn } from '@lux/core/logging';
 import { arrayWrap, flattenArray, normalizedArray, removeFromArray } from '@lux/helpers/array';
 import { isDef, isSimple, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
 import { stripDoubleCurls } from '@lux/helpers/strings';
+import { uuid } from '@lux/helpers/functions';
 import { ArrayOrSingle, Simple } from '@lux/types';
 import { Component } from '@lux/vdom/component';
 import { vnode, VNode, VNodeAttrs, VNodeStyle } from '@lux/vdom/vnode';
@@ -11,8 +12,6 @@ import { processExpression } from './expression';
 import { IfCondition, processIf } from './if';
 import { LoopCondition, processLoop } from './loop';
 
-let AST_ID = 0;
-
 export const enum ASTType {
   ELEMENT = 1,
   EXPRESSION = 2,
@@ -20,6 +19,7 @@ export const enum ASTType {
 }
 
 export const enum ASTFlags {
+  NONE = 0,
   IF = 1,
   ELSE = 2,
   ELIF = 3, // IF|ELSE
@@ -34,7 +34,7 @@ export const enum ASTFlags {
 }
 
 export abstract class ASTNode {
-  #id: number;
+  readonly #id: number;
   public $el: Node|Element;
   public type: ASTType;
   public parent: ASTElement;
@@ -42,7 +42,7 @@ export abstract class ASTNode {
 
 
   constructor(el: Node|Element, type: ASTType) {
-    this.#id = ++AST_ID;
+    this.#id = uuid();
     this.$el = el;
     this.type = type;
     this.parent = null;
@@ -126,16 +126,16 @@ export class ASTElement extends ASTNode {
 
   /** @deprecated */
   normalizedAttrs(context: BuildContext) {
-    let { state, additional } = context;
-    additional = additional || {};
+    let { state, scoped } = context;
+    scoped = scoped || {};
     const attrs: VNodeAttrs = {};
     for (let name in this.attrs) {
       let attr = this.attrs[name];
       if (isSimple(attr)) {
         attrs[name] = attr;
       } else {
-        attrs[name] = attr.bind in additional
-          ? additional[attr.bind]
+        attrs[name] = attr.bind in scoped
+          ? scoped[attr.bind]
           : state[attr.bind];
       }
     }

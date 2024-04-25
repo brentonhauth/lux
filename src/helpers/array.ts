@@ -1,5 +1,5 @@
-import { ArrayOrSingle } from '@lux/types';
-import { isArray, isDef, isUndef } from './is';
+import { ArrayOrSingle, UndefType } from '@lux/types';
+import { isArray, isUndef } from './is';
 
 
 const DEFAULT_COMPARE = (a:any, b:any) => a === b;
@@ -46,12 +46,8 @@ export function normalizedArray<T>(a: ArrayOrSingle<ArrayOrSingle<T>>): T[] {
   }
 }
 
-export function arrayUnwrap<T>(a: ArrayOrSingle<T>, index=0): T|null {
-  if (isArray(a)) {
-    return isDef(a[index]) ? a[index] : null;
-  } else {
-    return isDef(a) ? a : null;
-  }
+export function arrayUnwrap<T>(a: ArrayOrSingle<T>): T|UndefType {
+  return isArray(a) ? a[0] : a;
 }
 
 export function minimizeArray<T>(array: T[]): ArrayOrSingle<T>|null {

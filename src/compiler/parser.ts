@@ -1,7 +1,8 @@
-import { cached, lookup } from '@lux/helpers/functions';
-import { isBoolean, isNumber, isString, isUndef, isValidVariable } from '@lux/helpers/is';
+import { cached } from '@lux/helpers/functions';
+import { isBoolean, isNumber, isObjectLike, isString, isUndef, isValidVariable } from '@lux/helpers/is';
 import { ref, Reference } from '@lux/helpers/ref';
 import { CharCode, stripParensDeep, stripQuotes, toEscapedChar } from '@lux/helpers/strings';
+import { BuildContext, lookup } from '@lux/core/context';
 import { Simple, State, UndefType } from '@lux/types';
 
 export const enum StatementType {
@@ -27,7 +28,7 @@ export const enum StatementType {
 const containsTickRE = /(`)/g;
 const splitCompOpsRE = /\s*((?:>|<|!=|==)=?)\s*/;
 
-type ExpFn = (state?: State, additional?: State) => any;
+type ExpFn = (state?: State, scoped?: State) => any;
 
 export const enum ComparisonOp {
   EQ = '==',
@@ -61,24 +62,25 @@ export interface Statement {
   uses?: Array<string>
 }
 
-export function evalStatement(statement: Statement, state: State, additional?: State) {
+export function evalStatement(statement: Statement, context: BuildContext) {
   const { type, val } = statement;
 
   if (type & StatementType.SINGLE) {
     return type === StatementType.STRAIGHT_LOOKUP
-      ? lookup(val, state, additional) : val;
+      ? lookup(val, context) : val;
   } else if (type & StatementType.COMPLEX) {
-    return (<ExpFn>val).call({ ...state, ...(additional||{}) }, state, additional);
+    let temp = { ...context.state, ...(context.scoped||{}) };
+    return (<ExpFn>val).call(temp, context.state, context.scoped);
   }
 
   let [left, op, right] = <OperationArray>val;
 
   if (type & StatementType.LEFT_LOOKUP) {
-    left = lookup(left, state, additional);
+    left = lookup(left, context);
   }
 
   if (type & StatementType.RIGHT_LOOKUP) {
-    right = lookup(right, state, additional);
+    right = lookup(right, context);
   }
 
   return comparisonOps[op](left, right);

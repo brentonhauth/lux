@@ -80,6 +80,7 @@ function compileFromElementNode(el: Element|Node, context: CompileContext, isRoo
     const childAttrs = child.staticAttrs;
     if (isDef(childAttrs.if)) {
       addIfStatement(prev = child, 'if');
+      child.flags |= ASTFlags.IF;
       children.push(child);
     } else if (isDef(prev) && isDef(childAttrs.elif)) {
       prev.if.else = child;
@@ -111,7 +112,6 @@ function addIfStatement(ast: ASTElement, attr: string) {
   const raw = stringWrap(ast.staticAttrs[attr]).trim();
   const exp = parseStatement(raw);
   ast.if = { raw, exp, else: null };
-  ast.flags |= ASTFlags.IF;
   sanitizeFunctoinalAttrs(ast, attr);
 }
 
@@ -127,10 +127,10 @@ function compileComponentTemplate(template: string|Element, context: CompileCont
   if (isUndef(template)) { return null; }
   let elm: Element, children: any, childrenCheck = false;
   if (isString(template)) {
-    let sel = dom.select(template);
+    const sel = template.charAt(0) === '#' ? dom.select(template) : null;
     if (isUndef(sel)) {
       if (isUndef(domParser)) { domParser = new DOMParser(); }
-      let parsed = domParser.parseFromString(template, 'text/html');
+      const parsed = domParser.parseFromString(template, 'text/html');
       children = safeGet(parsed, 'children.0.children.1.chilren');
       childrenCheck = true;
     } else {

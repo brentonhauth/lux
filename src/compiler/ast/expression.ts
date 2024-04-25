@@ -5,7 +5,6 @@ import { evalStatement } from '@lux/compiler/parser';
 import { ASTExpression } from './astelement';
 
 export function processExpression(ast: ASTExpression, context: BuildContext): VNode {
-  let { state, additional } = context;
-  const outcome = evalStatement(ast.exp, state, additional);
+  const outcome = evalStatement(ast.exp, context);
   return vnode.text(isDef(outcome) ? String(outcome) : '');
 }

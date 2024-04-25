@@ -6,6 +6,10 @@ import { isArray, isDef, isFunc, isObject, isObjectLike, isUndef, isVNode } from
 
 const pureNumRE = /^([1-9]\d*|0)$/;
 
+let UUID = 0;
+
+export const uuid = (): number => UUID++;
+
 export function cached<T>(fn: (p: string)=>T): (p:string)=>T {
   const cache: Record<string, T> = Object.create(null);
   return function(p: string) {
@@ -92,15 +96,6 @@ export function applyAllAttrs(node: Element|VNode, attrs?: VNodeAttrs) {
       dom.setAttr(el, String(k), v);
     }
   });
-}
-
-export function lookup(name: string|number|any|symbol, state: State, additional?: State) {
-  if (isObjectLike(additional) && (name in additional)) {
-    return additional[name];
-  } else if (isObjectLike(state) && (name in state)) {
-    return state[name];
-  }
-  return null;
 }
 
 export function compareDeep(a: any, b: any) {

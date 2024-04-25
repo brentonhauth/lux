@@ -14,10 +14,8 @@ export function processIf(ast: ASTElement, context: BuildContext) {
     return null;
   }
 
-  const { state, additional } = context;
-
   while (isDef(ast?.if)) {
-    if (evalStatement(ast.if.exp, state, additional)) {
+    if (evalStatement(ast.if.exp, context)) {
       return ast;
     } else {
       ast = ast.if.else;

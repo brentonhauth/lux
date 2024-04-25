@@ -6,7 +6,7 @@ import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from '@lux/vdom/vnode
 const whitespacesRE = /^\s*$/;
 const validVarRE = /^[_a-z$]+[\w$]*$/i;
 
-const htmlTags = [
+const htmlTags = Object.freeze([
   'a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio',
   'b', 'base', 'basefont', 'bb', 'bdo', 'big', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption',
   'center', 'cite', 'code', 'col', 'colgroup', 'command', 'datagrid', 'datalist', 'dd', 'del', 'details', 'dfn',
@@ -17,19 +17,28 @@ const htmlTags = [
   'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select',
   'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot',
   'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr'
-];
+]);
+
+const bandHtmlTags = Object.freeze([
+  'script', 'noscript', 'style', 'template', 'html',
+  'body', 'head', 'title', 'meta', 'link'
+]);
 
 export function isHtmlTag(tag: string) {
   return htmlTags.includes(tag.toLowerCase());
 }
 
+export function isBandHtmlTag(tag: string) {
+  return bandHtmlTags.includes(tag.toLowerCase());
+}
+
 export const isArray = Array.isArray;
 
-export function isEmpty(a: any[]|string) {
+export function isEmpty(a: any[]|string): a is []|'' {
   return isDef(a) && a.length === 0;
 }
 
-export function isUndefOrEmpty(a: any[]|string) {
+export function isUndefOrEmpty(a: any[]|string): a is UndefType|[]|'' {
   return isUndef(a) || a.length === 0;
 }
 

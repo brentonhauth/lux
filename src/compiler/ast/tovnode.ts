@@ -84,6 +84,7 @@ function elmToVNode(ast: ASTElement, context: BuildContext): ArrayOrSingle<VNode
     }
   } else if (ast.flags & ASTFlags.LOOP) {
     let looped = processLoop(ast, context);
+    // FIXME: Potentially change use of `isUndefOrEmpty` to `isUndef`
     return isUndefOrEmpty(looped) ? null : looped;
   }
 
@@ -92,9 +93,8 @@ function elmToVNode(ast: ASTElement, context: BuildContext): ArrayOrSingle<VNode
 
 function evalAttrs(ast: ASTElement, context: BuildContext): VNodeAttrs {
   const attrs = { ...(ast.staticAttrs) };
-  let { state, additional } = context;
   for (let name in ast.dynamicAttrs) {
-    attrs[name] = evalStatement(ast.dynamicAttrs[name], state, additional);
+    attrs[name] = evalStatement(ast.dynamicAttrs[name], context);
   }
   return <VNodeAttrs>attrs;
 }

@@ -7,9 +7,11 @@ const unicodeRE = /^u[\d]{4}$/;
 const hexRE = /^x[a-fA-F\d]{2}$/;
 const capitalizeRE = /(^|\s|-)[a-z]/g;
 
-const EMPTY_STRING = '';
-const WHITE_SPACE = '\x20';
 
+export const enum Char {
+  EMPTY_STRING = '',
+  WHITE_SPACE = '\x20',
+};
 
 export const enum CharCode {
   LEFT_PAREN = 0x28, // (
@@ -29,8 +31,8 @@ export function stringWrap(a: any): string {
 
 export function trimAll(s: string|any) {
   return isString(s)
-    ? s.trim().replace(twoPlusSpacesRE, WHITE_SPACE)
-    : EMPTY_STRING;
+    ? s.trim().replace(twoPlusSpacesRE, Char.WHITE_SPACE)
+    : Char.EMPTY_STRING;
 }
 
 export function safeLower(s: string|any) {
@@ -96,7 +98,7 @@ export const stripDoubleCurls = cached((s: string) => {
     return s;
   }
   const result = removeDoubleCurlsRE.exec(t);
-  return safeGet<string>(result, 'groups.exp', EMPTY_STRING);
+  return safeGet<string>(result, 'groups.exp', Char.EMPTY_STRING);
 });
 
 export const toEscapedChar = cached((char: string) => {

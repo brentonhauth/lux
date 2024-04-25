@@ -1,5 +1,5 @@
 import { isCommentVNode, isDef, isElement, isString, isTextVNode, isUndef, isVNode } from '@lux/helpers/is';
-import { applyAll, applyAllAttrs, forIn } from '@lux/helpers/functions';
+import { applyAllAttrs, forIn } from '@lux/helpers/functions';
 import { arrayWrap } from '@lux/helpers/array';
 import { dom } from '@lux/helpers/dom';
 import { Renderable } from '@lux/types';
@@ -7,41 +7,6 @@ import { VNode } from './vnode';
 
 export function $render(node: Renderable): Element {
   return _render2(node);
-}
-
-function _render(node: Renderable): Element {
-  if (isUndef(node)) {
-    return <any>dom.createComment('NULL');
-  } else if (isString(node)) {
-    return <any>dom.createText(node);
-  }
-
-  if (!node.tag) {
-    node.$el = <any>dom.createComment('');
-    return node.$el;
-  }
-
-  node.$el = dom.createElement(node.tag);
-  applyAllAttrs(node);
-  if (node.data?.style) {
-    applyAll((<any>node.$el).style, node.data.style);
-  }
-
-  if (isDef(node.children)) {
-    let children = arrayWrap(node.children);
-    children.forEach(c => {
-      if (isUndef(c)) {
-        node.$el.appendChild(dom.createComment());
-      } else if (isString(c)) {
-        node.$el.appendChild(dom.createText(c));
-      } else if (isVNode(c)) {
-        c.$el = $render(c);
-        node.$el.appendChild(c.$el);
-      }
-    });
-  }
-
-  return node.$el;
 }
 
 function _render2(node: Renderable): Element {
@@ -67,19 +32,20 @@ function _render2(node: Renderable): Element {
 
   if (isDef(node.children)) {
     let children = arrayWrap(node.children);
-    children.forEach(c => {
+    for (let c of children) {
       if (isString(c)) {
         node.$el.appendChild(dom.createText(c));
       } else if (isVNode(c)) {
         c.$el = $render(c);
         node.$el.appendChild(c.$el);
       }
-    });
+    }
   }
 
   return node.$el;
 }
 
+/** @deprecated */
 export function $mount(node: Element|VNode, target: Element): Element {
   if (isElement(node)) {
     target.appendChild(node);
