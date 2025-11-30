@@ -1,0 +1,56 @@
+Events:
+  - Hook up events
+
+Fuctional Attributes:
+  - (maybe) Change functional attributes to have '#' prefix
+    - if so, change 'loop'->'#for'
+  - add 'model' attribute for watching inputs
+
+Lifecycle:
+  - Design & implement global lifecycle
+  - implement similar lifecycle for components
+  - Add 'mounted' feature to components
+
+Patching:
+  - New patching system that doesn't rely on vnode.$el, but parent[i]
+    - Check to see if dom matches vdom as updating, and patch accordingly
+  - Schedule patches after getting list of updated values
+  - Isolate portions of AST that need updating
+  - Inject updates directly into components, to prevent full rebuild
+  - (v.hard) Cancel updates
+  - (unsure) Have dom watcher inform app of any foreign changes
+  - Register Component as VNode to store component instance
+
+Compiler/AST:
+  - Flag static elements
+  - Flag if static children
+  - Keep list of watchable variables
+  - Check nested elements to find recursive component use
+  - Change context 'state'->'global', and 'scoped'->'scoped'
+  - Have different error codes
+  - Hook onError function into Compile Context
+  - (unsure) Remember last used vnode(s) so you don't have to rebuild them
+  - (unsure) Key elements, mainly to keep track of component un/mounting
+
+HTML:
+  - Separate html tags into different groups;
+    - Band group:
+      - Should not be allowed to use, or mount to
+      - Contains: [
+        script, noscript, style, template, html,
+        body, head, title, doctype, meta, link
+      ]
+    - Preformated group:
+      - Maintains text even if all whitespaces
+      - Contains: [pre, code, ...]
+  - Unpack 'dom' object (no need for it since only doing browser)
+    - Keep functions for minifying and error handling
+
+Style/CSS:
+  - Implement bindable styles
+  - Implement scoped css
+
+Hyperscript:
+  - Have 'h' do valid vnode checks, and the vnode ctor be a factory
+  - Add component rendering to 'h' function
+  - Add optional 'render' function to components, over component template
