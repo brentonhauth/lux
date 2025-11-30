@@ -1,59 +1,43 @@
-
-import { BuildContext, withContext } from '@lux/core/context';
-import { warn } from '@lux/core/logging';
-import { cached, lookup } from '@lux/helpers/functions';
-import { isString, isUndef, isUndefOrEmpty } from '@lux/helpers/is';
-import { trimAll } from '@lux/helpers/strings';
-import { VNode } from '@lux/vdom/vnode';
-import { ASTElement } from './astelement';
-import { toVNodeDry } from './toVnode';
+import { isUndef, isUndefOrEmpty } from '@lux/helpers/is';
+import { cached } from '@lux/helpers/common';
+import { error } from '@lux/core/logging';
+import { type Expression, parseExpression } from './expression';
 
 const loopSplitRE = /\s+(?:of|in)\s+/;
+const varNameRE = /^[_a-z$]+[\w$]*$/i;
 
 export interface LoopCondition {
-  exp: string;
+  raw: string;
   alias: string;
-  items: string;
-  key?: string;
+  items: Expression;
   iterator?: string;
 }
 
-export function processLoop(ast: ASTElement, context: BuildContext): Array<VNode> {
-  if (isUndef(ast.loop)) {
-    warn('Is not loop');
-    return [];
+
+const parseLoopBase = cached((exp: string): LoopCondition => {
+  const params = exp.split(loopSplitRE);
+
+  if (params.length !== 2) {
+    error('Invalid format for loop expression:', params);
+    return null;
   }
 
-  const { alias, items } = ast.loop;
-  const { state, additional } = context; 
-
-  let list: Array<any> = lookup(items, state, additional);
-
-  if (isString(list)) {
-    list = list.split('');
-  }
-  if (isUndefOrEmpty(list)) {
-    return [];
+  const [alias, _items] = params;
+  if (!varNameRE.test(alias)) {
+    error('Loop parse error: issue with alias name', alias);
+    return null;
   }
 
-  const output = new Array<VNode>(list.length);
-  const iter = { [alias]: <any>null };
-  for (let i in list) {
-    iter[alias] = list[i];
-    let ctx = withContext(context, iter);
-    output.push(toVNodeDry(ast, ctx));
-  }
-  return output;
-}
-
-
-export const parseLoop = cached((exp: string): LoopCondition => {
-  exp = trimAll(exp);
-  const [alias, items] = exp.split(loopSplitRE);
-
-  if (!isString(alias) || !isString(items)) {
-    throw new Error('Could not parse loop');
+  const items = parseExpression(_items);
+  if (isUndef(items)) {
+    error('Loop parse error: issue with parsing iterable', exp);
+    return null;
   }
 
-  return { exp, alias, items };
+  return { raw: exp, alias, items };
 });
+
+export const parseLoop = (exp: string): LoopCondition => {
+  exp = exp?.trim();
+  return isUndefOrEmpty(exp) ? null : parseLoopBase(exp);
+};

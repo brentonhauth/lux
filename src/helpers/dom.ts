@@ -1,56 +1,70 @@
-import { safeIgnoreCaseEquals } from './strings';
-
-interface DomApi {
-  select(query: string): Element;
-  createElement(tag: string): Element;
-  removeAllChildren(el: Element): void;
-  setAttr(el: Element, attr: string, value: any): void;
-  getAttr(el: Element, attr: string): string;
-  hasAttr(el: Element, attr: string): boolean;
-  delAttr(el: Element, attr: string): void;
-  createText(text: string): Text;
-  createComment(text?: string): Comment;
-  tagIs(el: Element, tag: string): boolean;
-}
+import { UniqueVNodeTag, VNode } from '@lux/vdom/vnode';
+import { isDef, isFunction, isUndef } from './is';
+import { Renderable } from '@lux/core/types';
 
 
-export const dom: DomApi = {
+const getDocumentFn = <S extends keyof Document>(s: S): Document[S] => {
+  const fn = document[s];
+  return isFunction(fn) ? fn.bind(document) : fn;
+};
 
-  select: (query: string) => document.querySelector(query),
+export const createElement = getDocumentFn('createElement');
+export const createTextNode = getDocumentFn('createTextNode');
+export const createComment = getDocumentFn('createComment');
+export const createAttribute = getDocumentFn('createAttribute');
+export const createFragment = getDocumentFn('createDocumentFragment');
 
-  createElement: (tag: string): Element => document.createElement(tag),
 
-  setAttr(el: Element, attr: string, value: any) {
-    el?.setAttribute(attr, value);
-  },
+export const insertAfter = (parent: Element, ref: Element|null, node: Renderable|Element|Node): void => {
+  if (isDef(ref)) {
+    ref.insertAdjacentElement('afterend', node as Element);
+  } else {
+    parent.appendChild(node); // Append the child if no reference.
+  }
+};
 
-  getAttr(el: Element, attr: string) {
-    return el.getAttribute(attr);
-  },
+export const insertBefore = (parent: Element, node: Element|Node, next: Element|null): void => {
+  if (isDef(next)) {
+    parent.insertBefore(node, next);
+  } else {
+    parent.appendChild(node);
+  }
+};
 
-  hasAttr(el: Element, attr: string) {
-    return el.hasAttribute(attr);
-  },
 
-  delAttr(el: Element, attr: string) {
-    el?.removeAttribute(attr);
-  },
-  
-  removeAllChildren(el: Element) {
-    while (el.childNodes.length) {
-      el.removeChild(el.lastChild);
-    }
-  },
-  
-  createText(text: string): Text {
-    return document.createTextNode(text);
-  },
+export const getParent = (node: VNode|Element|Node): Element => {
+  if (isUndef((<Element>node)?.nodeType)) {
+    node = (<VNode>node).$el;
+  }
+  return (<Element>node).parentElement;
+};
 
-  createComment(text='') {
-    return document.createComment(text);
-  },
+export const getNextRenderable = (vnode: VNode, index?: number): Renderable => {
+  if (isDef(index)) {
+    let next = vnode.children[index + 1];
+    return next?.$el || getNextRenderable(vnode.children[index]);
+  }
+  return vnode?.$el?.nextSibling as Renderable;
+};
 
-  tagIs(el: Element, tag: string): boolean {
-    return safeIgnoreCaseEquals(el.tagName, tag);
+export const getPrevRenderable = (vnode: VNode, index?: number): Renderable => {
+  if (isDef(index)) {
+    let prev = vnode.children[index - 1];
+    return prev?.$el || getPrevRenderable(vnode.children[index]);
+  }
+  return vnode?.$el?.previousSibling as Renderable;
+};
+
+
+export const getAnchor = (vnode: VNode): Renderable => {
+  if (isUndef(vnode)) {
+    return null;
+  } else if ( // Blocks or Components technically don't have real nodes.
+    vnode.type === UniqueVNodeTag.BLOCK ||
+    vnode.type === UniqueVNodeTag.COMPONENT
+  ) {
+    return getAnchor(vnode.children?.[0]); // get anchor of first child
+  } else {
+    return vnode.$el;
   }
 };

@@ -1,118 +1,51 @@
-
-import * as ast from '@lux/compiler/ast/astelement';
-import { AnyFunction, Simple, UndefType } from '@lux/types';
-import { CommentVNode, TextVNode, UniqueVNodeTags, VNode } from '@lux/vdom/vnode';
+import { type AnyFunction } from '@lux/core/types';
 
 const whitespacesRE = /^\s*$/;
-const validVarRE = /^[_a-z$]+[\w$]*$/i;
 
-const htmlTags = [
+// Does NOT include forbidden tags.
+const htmlTags: Readonly<Set<string>> = new Set([
   'a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio',
-  'b', 'base', 'basefont', 'bb', 'bdo', 'big', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption',
-  'center', 'cite', 'code', 'col', 'colgroup', 'command', 'datagrid', 'datalist', 'dd', 'del', 'details', 'dfn',
-  'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'eventsource', 'fieldset', 'figcaption', 'figure', 'font',
-  'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr',
-  'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link',
-  'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option',
-  'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select',
-  'small', 'source', 'span', 'strike', 'strong', 'style', 'sub', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot',
-  'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr'
-];
+  'b', 'base', 'basefont', 'bb', 'bdo', 'big', 'blockquote', 'br', 'button', 'canvas',
+  'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'command', 'datagrid', 'datalist',
+  'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed',
+  'eventsource', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame',
+  'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'i', 'main',
+  'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link',
+  'map', 'mark', 'menu', 'meter', 'nav', 'noframes', 'object', 'ol', 'optgroup', 'option',
+  'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's',
+  'samp', 'section', 'select', 'small', 'source', 'span', 'strike', 'strong',
+  'sub', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title',
+  'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr',
+]);
 
-export function isHtmlTag(tag: string) {
-  return htmlTags.includes(tag.toLowerCase());
-}
+const forbiddenTags: Readonly<Set<string>> = new Set([
+  'script', 'template', 'noscript', 'html', 'style', 'body', 'head', 'meta',
+]);
+
+const keywords: Readonly<Set<string>> = new Set([
+  'function', 'return', 'var', 'let', 'const', 'if', 'else', 'while', 'for', 'in', 'do',
+  'switch', 'class', 'case', 'break', 'default', 'continue', 'true', 'false', 'null', 'undefined',
+  'new', 'this', 'try', 'catch', 'finally', 'throw', 'with', 'typeof', 'instanceof', 'delete',
+  'arguments', 'import', 'export', 'as', 'async', 'await', 'debugger',
+]);
+
+export const isKeyword = (word: string) => keywords.has(word);
+export const isHtmlTag = (tag: string) => htmlTags.has(tag.toLowerCase());
+export const isForbiddenTag = (tag: string) => forbiddenTags.has(tag.toLowerCase());
+export const isBlankString = (s: string) => whitespacesRE.test(s);
+export const isUndefOrEmpty = (a: any[]|string) => isUndef(a) || a.length === 0;
+
+export const isDef = (a: any) => a != null;
+export const isUndef = (a: any): a is undefined|null => a == null;
 
 export const isArray = Array.isArray;
-
-export function isEmpty(a: any[]|string) {
-  return isDef(a) && a.length === 0;
-}
-
-export function isUndefOrEmpty(a: any[]|string) {
-  return isUndef(a) || a.length === 0;
-}
-
-export function isBlankString(s: string) {
-  return whitespacesRE.test(s);
-}
-
-export function isValidVariable(a: string) {
-  return validVarRE.test(a);
-}
-
-export function isString(a: any): a is string {
-  return typeof a === 'string';
-}
-
-export function isNumber(a: any): a is number {
-  return typeof a === 'number';
-}
-
-export function isBoolean(a: any): a is boolean {
-  return typeof a === 'boolean';
-}
-
-export function isSimple(a: any): a is Simple {
-  return (
-    typeof a === 'string' ||
-    typeof a === 'number' ||
-    typeof a === 'boolean'
-  );
-}
-
-export function isObjectLike(a: any) {
-  return a != null && typeof a === 'object';
-}
-
-export function isObject(a: any) {
-  return isObjectLike(a) && !isArray(a);
-}
-
-export function isUndef(a: any): a is UndefType {
-  return a == null;
-}
-
-export function isDef(a: any) {
-  return a != null;
-}
-
-export function isFunc(a: any): a is AnyFunction {
-  return typeof a === 'function'; 
-}
-
-export function isRegExp(a: any): a is RegExp {
-  return a instanceof RegExp;
-}
-
-export function isElement(a: any): a is Element {
-  return a instanceof Element;
-}
-
-export function isVNode(a: any): a is VNode {
-  return isDef(a) && a.__isVnode;
-}
-
-export function isTextVNode(a: any): a is TextVNode {
-  return isVNode(a) && a.tag === UniqueVNodeTags.TEXT;
-}
-
-export function isCommentVNode(a: any): a is CommentVNode {
-  return isVNode(a) && a.tag === UniqueVNodeTags.COMMENT;
-}
-
-export function isASTText(a: ast.ASTNode): a is ast.ASTText {
-  return a.type === ast.ASTType.TEXT;
-}
-
-export function isASTExpression(a: ast.ASTNode): a is ast.ASTExpression {
-  return a.type === ast.ASTType.EXPRESSION;
-}
-
-export function isASTElement(a: ast.ASTNode): a is ast.ASTElement {
-  return a.type === ast.ASTType.ELEMENT;
-}
-
-export function isASTComponent(a: ast.ASTNode): a is ast.ASTComponent {
-  return (a.flags & ast.ASTFlags.COMPONENT_MASK) !== 0;
-}
+export const isNumber = (a: any): a is number => typeof a === 'number';
+export const isBoolean = (a: any): a is boolean => typeof a === 'boolean';
+export const isFunction = (a: any): a is AnyFunction => typeof a === 'function';
+export const isString = (a: any): a is string => typeof a === 'string';
+export const isObject = (a: any): a is object => a && typeof a === 'object';
+export const isReal = (a: any): a is (string|boolean|number) => (
+  typeof a === 'string' ||
+  typeof a === 'number' ||
+  typeof a === 'boolean'
+);

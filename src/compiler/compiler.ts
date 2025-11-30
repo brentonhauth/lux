@@ -1,268 +1,278 @@
-import { isASTElement, isBlankString, isDef, isHtmlTag, isString, isUndef } from '@lux/helpers/is';
-import { stringWrap, trimAll } from '@lux/helpers/strings';
-import { Reference, ref } from '@lux/helpers/ref';
-import { VNodeStyle } from '@lux/vdom/vnode';
-import { ASTComponent, ASTElement, ASTExpression, ASTFlags, ASTNode, ASTText } from './ast/astelement';
+import { isBlankString, isDef, isForbiddenTag, isHtmlTag, isUndef } from '@lux/helpers/is';
+import { parseExpression } from './ast/expression';
 import { parseLoop } from './ast/loop';
-import { warn } from '@lux/core/logging';
-import { parseStatement } from './parser';
-import { safeGet } from '@lux/helpers/functions';
-import { CompileContext } from '@lux/core/context';
-import { dom } from '@lux/helpers/dom';
+import { error, warn } from '@lux/core/logging';
+import { stripCurleys } from '@lux/helpers/strings';
+import { compileAttributes } from './ast/attributes';
+import { type Component } from '@lux/vdom/component';
+import {
+  type ASTNode,
+  ASTComponent,
+  ASTCondition,
+  ASTElement,
+  ASTExpression,
+  ASTHtml,
+  ASTLoop,
+  ASTText
+} from './ast/astnode';
 
-const functionalAttrs = ['loop', 'if', 'elif', 'else'];
-const specialAttrs = ['style', 'class', 'key'];
 
 const stringExpRE = /^\s*\{\{\s*(.+)*\s*\}\}\s*$/;
-const bindingRE = /^:/g;
-const eventRE = /^@/g;
-let domParser: DOMParser;
 
-export function compileFromDOM(el: Element|Node, context: CompileContext): ASTNode {
-  return compileFromNode(el, context, true);
-}
+const IF_ATTR = '#if';
+const LOOP_ATTR = '#loop';
+const ELSE_ATTR = '#else';
+const ELIF_ATTR = '#elif'; // maybe don't need
 
-function compileFromNode(el: Element|Node, context: CompileContext, isRoot=false): ASTNode {
-  if (el.nodeType === Node.TEXT_NODE) {
-    return compileFromTextNode(el, context, isRoot);
-  } else if (el.nodeType === Node.ELEMENT_NODE) {
-    return compileFromElementNode(el, context, isRoot);
+/**
+ * Grammar for compilation.
+ * ```
+ * <root> ::= <elem>
+ * <elem> ::= {attributes} (<html> | <comp>)
+ * <comp> ::= {Component}
+ * <html> ::= {openTag} <children> {closeTag}
+ * <children> ::= <child>* | eps
+ * <child> ::= <text> | <if>
+ * <text> ::= <exp> | <raw>
+ * <exp> ::= {Expression}
+ * <raw> ::= {rawText}
+ * <if> ::= {ifCondition} <loop> <else> | <loop>
+ * <else> ::= {elseCondition} <if> | eps
+ * <loop> ::= {loopCondition} <elem> | <elem>
+ * ```
+ */
+
+
+/**
+ * ```
+ * <root> ::= <elem>
+ * ```
+ * @param el
+ * @param context
+ * @returns
+ */
+export function compile(el: Element, context: Component): ASTNode {
+  // Compile the root node
+  if (el?.nodeType !== Node.ELEMENT_NODE) {
+    error('Must be an element node at the root!');
+    return null;
   }
-  return null;
+
+  for (let attr of [LOOP_ATTR, IF_ATTR, ELSE_ATTR]) {
+    if (el.hasAttribute(attr)) {
+      error(`Cannot have structural attributes (${attr}) on root element. Ignoring.`);
+      el.removeAttribute(attr);
+    }
+  }
+
+  return _element(el, context);
 }
 
-function compileFromTextNode(el: Element|Node, context: CompileContext, isRoot=false): ASTExpression|ASTText {
+/**
+ * ```
+ * <elem> ::= <html> | <comp>
+ * ```
+ * @param el
+ * @param context
+ */
+function _element(el: Element, context: Component): ASTNode {
+  if (isForbiddenTag(el.tagName)) {
+    error('Invalid tag name', el.tagName);
+    return null;
+  }
+
+  if (el.hasAttribute(ELSE_ATTR)) {
+    warn(`Detected #else on <${el.tagName}> without an #if on the previous node. Ignoring.`);
+    el.removeAttribute(ELSE_ATTR);
+  }
+
+  const node: ASTElement = isHtmlTag(el.tagName)
+    ? _html(el, context)
+    : _component(el, context);
+
+  if (isDef(node)) {
+    compileAttributes(el, node);
+  }
+
+  return node;
+}
+
+/**
+ * ```
+ * <html> ::= {openTag} <children> {closeTag}
+ * ```
+ * @param el
+ * @param context
+ */
+function _html(el: Element, context: Component): ASTHtml {
+  const h = new ASTHtml(el);
+  h.children.push(..._children(<any>el.childNodes, context));
+  return h;
+}
+
+/**
+ * ```
+ * <children> ::= <child>* | eps
+ * ```
+ * @param nodes
+ * @returns
+ */
+function _children(nodes: Array<Element>, context: Component): Array<ASTNode> {
+  let i = 0;
+  const children: ASTNode[] = [];
+
+  // Fix to oversight of spaces between elements. Will remove 'pre' text though.
+  const workingNodes = Array.from(nodes).filter(n => (
+    n.nodeType === Node.ELEMENT_NODE ||
+    (n.nodeType === Node.TEXT_NODE && !isBlankString(n.textContent))
+  ));
+
+  // get each child for the current html tag.
+  while (i < workingNodes.length) {
+    let child = _child(workingNodes, context, i);
+    // ignore children that don't yield an actual result.
+    if (isDef(child)) {
+      children.push(child);
+      i += child.depth();
+    } else {
+      ++i;
+    }
+  }
+  return children;
+}
+
+/**
+ * ```
+ * <child> ::= <text> | <if>
+ * ```
+ * @param nodes
+ * @param context
+ * @param index
+ * @returns
+ */
+function _child(nodes: Array<Element>, context: Component, index: number): ASTNode {
+  if (nodes[index].nodeType === Node.TEXT_NODE) {
+    return _text(nodes[index]);
+  } else if (nodes[index].nodeType === Node.ELEMENT_NODE) {
+    return _if(nodes, context, index);
+  } else {
+    // Either a comment or something else. We don't care.
+    return null;
+  }
+}
+
+/**
+ * ```
+ * <text> ::= <exp> | <raw>
+ * <exp> ::= {Expression}
+ * <raw> ::= {rawText}
+ * ```
+ * @param el
+ * @param context
+ * @returns
+ */
+function _text(el: Element): ASTNode {
   if (isBlankString(el.textContent)) {
-    return null;
-  } else if (stringExpRE.test(el.textContent)) {
-    return new ASTExpression(el, el.textContent);
-  } else {
-    return new ASTText(el, el.textContent);
-  }
-}
-
-function compileFromElementNode(el: Element|Node, context: CompileContext, isRoot=false): ASTElement {
-  const elm = <Element>el;
-  const children: Array<ASTNode> = [];
-  const flags: Reference<ASTFlags> = ref(0);
-  const { staticAttrs, dynamicAttrs, classes, style, events } = compileAttrs(elm, flags);
-
-  if (!isHtmlTag(elm.tagName)) {
-    const elmTagName = elm.tagName.toLowerCase();
-    let index = context.components.findIndex(
-      c => c.tag.toLowerCase() === elmTagName);
-    if (index !== -1) {
-      let comp = context.components[index];
-      let root: ASTElement|null;
-      if (isDef(comp.ast)) {
-        root = comp.ast;
-      } else {
-        root = <any>compileComponentTemplate(comp.template, context);
-        if (isUndef(root)) {
-          return null;
-        }
-      }
-      return new ASTComponent(elm, comp, root, staticAttrs, dynamicAttrs);
-    }
-  }
-
-  let prev: ASTElement|null;
-  for (let i = 0; i < elm.childNodes.length; ++i) {
-    const childElm = <Element>elm.childNodes[i];
-    const child = compileFromNode(childElm, context, false);
-    if (isUndef(child)) {
-      continue;
-    } else if (!isASTElement(child)) {
-      children.push(child);
-      prev = null;
-      continue;
-    }
-    const childAttrs = child.staticAttrs;
-    if (isDef(childAttrs.if)) {
-      addIfStatement(prev = child, 'if');
-      children.push(child);
-    } else if (isDef(prev) && isDef(childAttrs.elif)) {
-      prev.if.else = child;
-      addIfStatement(prev = child, 'elif');
-      child.flags |= ASTFlags.ELIF;
-    } else if (isDef(prev) && isDef(childAttrs.else)) {
-      prev.if.else = child;
-      child.flags |= ASTFlags.ELSE;
-      sanitizeFunctoinalAttrs(child, 'else');
-      prev = null;
-    } else {
-      if (isDef(childAttrs.loop)) {
-        addLoopStatement(child);
-      } else {
-        sanitizeFunctoinalAttrs(child);
-      }
-      children.push(child);
-      prev = null;
-    }
-  }
-  const ast = new ASTElement(
-    elm, elm.tagName, staticAttrs,
-    dynamicAttrs, style, classes, children);
-  ast.flags |= flags.value;
-  return ast;
-}
-
-function addIfStatement(ast: ASTElement, attr: string) {
-  const raw = stringWrap(ast.staticAttrs[attr]).trim();
-  const exp = parseStatement(raw);
-  ast.if = { raw, exp, else: null };
-  ast.flags |= ASTFlags.IF;
-  sanitizeFunctoinalAttrs(ast, attr);
-}
-
-function addLoopStatement(ast: ASTElement) {
-  const raw = stringWrap(ast.staticAttrs.loop);
-  const loop = parseLoop(raw);
-  ast.loop = loop;
-  ast.flags |= ASTFlags.LOOP;
-  sanitizeFunctoinalAttrs(ast, 'loop');
-}
-
-function compileComponentTemplate(template: string|Element, context: CompileContext) {
-  if (isUndef(template)) { return null; }
-  let elm: Element, children: any, childrenCheck = false;
-  if (isString(template)) {
-    let sel = dom.select(template);
-    if (isUndef(sel)) {
-      if (isUndef(domParser)) { domParser = new DOMParser(); }
-      let parsed = domParser.parseFromString(template, 'text/html');
-      children = safeGet(parsed, 'children.0.children.1.chilren');
-      childrenCheck = true;
-    } else {
-      elm = sel;
-    }
-  } else {
-    elm = template;
-  }
-  if (isDef(elm) && dom.tagIs(elm, 'template')) {
-    children = safeGet(elm, 'content.children');
-    childrenCheck = true;
-  }
-  if (childrenCheck) {
-    if (children?.length !== 1) {
-      warn('Component should (only) have 1 root node');
-      return null;
-    }
-    elm = children[0];
-  }
-  const ast = compileFromDOM(elm, context);
-  if (!isASTElement(ast)) {
-    warn('Component must be made of elements');
+    // TODO: somehow check for 'pre' tags, and such
     return null;
   }
-  return ast;
+
+  if (stringExpRE.test(el.textContent)) {
+    // TODO: Change logic so that You can have multiple {{...}} inside text.
+    const exp = parseExpression(stripCurleys(el.textContent.trim()));
+    return isDef(exp) ? new ASTExpression(el, exp) : new ASTText(el);
+  } else {
+    return new ASTText(el);
+  }
 }
 
-function compileAttrs(el: Element, flags: Reference<ASTFlags>) {
-  const attrNames = el.getAttributeNames();
-  const attrValue: Reference<string> = ref();
-  const staticAttrs: Record<string, string> = {};
-  const dynamicAttrs: Record<string, any> = {};
-  const events: Record<string, string> = {};
-  const style: VNodeStyle = {};
-  const classes: any[] = [];
+/**
+ * ```
+ * <if> ::= {ifCondition} <loop> <else> | <loop>
+ * ```
+ * @param nodes
+ * @param context
+ * @param index
+ * @returns
+ */
+function _if(nodes: Array<Element>, context: Component, index: number): ASTNode {
+  if (isUndef(nodes[index])) {
+    return null;
+  }
 
-  for (let name of attrNames) {
-    let isBound = false, isEvent = false;
-    let trueName: string;
-    if (isBound = bindingRE.test(name)) {
-      trueName = normalizeBinding(el, name, attrValue);
-    } else if (isEvent = eventRE.test(name)) {
-      trueName = normalizeEvent(el, name, attrValue);
-    } else {
-      attrValue.value = dom.getAttr(el, trueName = name);
-    }
+  let node = _loop(nodes, context, index);
 
-    if (functionalAttrs.includes(trueName)) {
-      if (isBound || isEvent) {
-        warn(`Attribute "${trueName}" cannot have prfix "@" or ":"`);
-      }
-      staticAttrs[trueName] = attrValue.value;
-      continue;
-    } else if (isEvent) {
-      events[trueName] = attrValue.value;
-      continue;
-    }
-
-    switch (trueName) {
-      case 'style':
-        normalizeStyle(style, attrValue.value, isBound);
-        if (isBound) {
-          flags.value |= ASTFlags.DYNAMIC_STYLE;
-        }
-        break;
-      case 'class':
-        normalizeClass(classes, attrValue.value, isBound);
-        if (isBound) {
-          flags.value |= ASTFlags.DYNAMIC_CLASSES;
-        }
-        break;
-      default:
-        if (isBound) {
-          dynamicAttrs[trueName] = attrValue.value;
-          flags.value |= ASTFlags.BIND;
-        } else {
-          staticAttrs[trueName] = attrValue.value;
-        }
-        break;
+  if (isDef(node) && nodes[index].hasAttribute(IF_ATTR)) {
+    const cond = parseExpression(nodes[index].getAttribute(IF_ATTR));
+    if (isDef(cond)) {
+      node = new ASTCondition(nodes[index], cond, node, _else(nodes, context, index + 1));
+      nodes[index].removeAttribute(IF_ATTR);
     }
   }
 
-  for (let a in dynamicAttrs) {
-    dynamicAttrs[a] = parseStatement(dynamicAttrs[a]);
-  }
-
-  return {
-    dynamicAttrs,
-    staticAttrs,
-    events,
-    classes,
-    style,
-  };
+  return node;
 }
 
-function normalizeBinding(el: Element, attr: string, bindingValue?: Reference<string>) {
-  const value = trimAll(el.getAttribute(attr));
-  const name = attr.slice(1).toLowerCase();
-  dom.setAttr(el, attr, value);
-  dom.delAttr(el, attr);
-  bindingValue?.set(value);
-  return name;
-}
+/**
+ * ```
+ * <loop> ::= {loopCondition} <elem> | <elem>
+ * ```
+ * @param nodes
+ * @param context
+ * @param index
+ * @returns
+ */
+function _loop(nodes: Array<Element>, context: Component, index: number): ASTNode {
+  let node = _element(nodes[index], context);
 
-function normalizeEvent(el: Element, event: string, eventValue: Reference<string>): string {
-  warn('Events not yet implemented');
-  return '';
-}
-
-function normalizeStyle(vnodeStyle: VNodeStyle, style: string, isBound: boolean) {
-  const all = style.split(/;\s*/).map(s => s.split(/:\s*/));
-  all.forEach(x => {
-    if (x.length === 2) {
-      vnodeStyle[x[0].trim()] = x[1];
-    }
-  });
-}
-
-function normalizeClass(classes: string[], class0: string, isBound: boolean) {
-  // Temporary //
-  classes.concat(class0.split('\x20'));
-}
-
-function sanitizeFunctoinalAttrs(ast: ASTElement, keep?: string) {
-  const el = <Element>ast.$el;
-  for (let u of functionalAttrs) {
-    if (dom.hasAttr(el, u)) {
-      if (keep && u !== keep) {
-        warn(`Cannot have "${u}" attribute with "${keep}".`);
-      }
-      delete ast.staticAttrs[u];
-      dom.delAttr(el, u);
+  if (isDef(node) && nodes[index].hasAttribute(LOOP_ATTR)) {
+    const cond = parseLoop(nodes[index].getAttribute(LOOP_ATTR));
+    if (isDef(cond)) {
+      const { key } = (node as ASTElement).attrs?.dynamics;
+      node = new ASTLoop(nodes[index], cond, node, key);
+      nodes[index].removeAttribute(LOOP_ATTR);
     }
   }
+
+  return node;
+}
+
+/**
+ * ```
+ * <else> ::= {elseCondition} <if> | eps
+ * ```
+ * @param nodes
+ * @param context
+ * @param index
+ * @returns
+ */
+function _else(nodes: Array<Element>, context: Component, index: number): ASTNode {
+  const n = nodes[index];
+  if (isUndef(n) || n.nodeType !== Node.ELEMENT_NODE || !(n.hasAttribute(ELSE_ATTR))) {
+    // if there is not a next node or it is not an 'else' statement then return nothing
+    return null;
+  }
+
+  n.removeAttribute(ELSE_ATTR); // Remove ELSE before going lower to avoid error check
+  return _if(nodes, context, index);
+}
+
+/**
+ * ```
+ * <comp> ::= {Component}
+ * ```
+ * @param el
+ * @param context
+ * @returns
+ */
+function _component(el: Element, context: Component): ASTComponent {
+  const Comp = context.getComponent(el.tagName);
+
+  if (isUndef(Comp)) {
+    error('No component with tag:', el.tagName);
+    return null;
+  }
+
+  // Need lazy loading, only compile Component when I need it.
+  return new ASTComponent(el, Comp);
 }

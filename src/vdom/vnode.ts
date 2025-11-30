@@ -1,120 +1,126 @@
+import { Func1, MaybeArray, Renderable, Simple } from '@lux/core/types';
+import { uuid } from '@lux/helpers/common';
+import { type Component, type ComponentInstance } from './component';
+import { type Computed } from '@lux/core/responsive/computed';
+import { Context } from '@lux/core/context';
+import {type Block } from './block';
 
-import { isArray, isDef, isString, isUndef, isVNode } from '@lux/helpers/is';
-import { arrayWrap, normalizedArray } from '@lux/helpers/array';
-import { stringWrap } from '@lux/helpers/strings';
-import { ArrayOrSingle, Simple } from '@lux/types';
-
-export const enum UniqueVNodeTags {
-  COMMENT = '#comment',
-  TEXT = '#text',
-}
-
-export const enum VNodeCloneFlags {
-  DEEP = 1,
-  ELEMENT = 2,
-  DEFAULT = DEEP|0,
-};
-
-export const enum VNodeFlags {
-  STATIC = 1,
-  TEXT = 2,
-  COMMENT = 4,
-  DEFAULT = STATIC|0,
-}
-
-export type VNodeAttrs = Record<string, string | number | boolean>;
-export type VNodeClass = ArrayOrSingle<string>|Record<string, boolean>;
+export type VNodeStaticAttrs = Record<string, string | number | boolean>;
+export type VNodeClass = MaybeArray<string>|Record<string, boolean>;
 export type VNodeStyle = Record<string, string|number>;
 export type VNodeEvents = Record<string, Event>;
-export type VNodeChildren = ArrayOrSingle<VNode|string>;
 
-export interface VNodeData {
-  key?: string;
-  attrs?: VNodeAttrs;
-  class?: VNodeClass;
-  style?: VNodeStyle;
-  on?: VNodeEvents;
-}
+export const enum VNodeFlags {
+  NONE = 0,
+  STATIC = 0x1,
+  COMPONENT = 0x2,
+  BLOCK = 0x4,
+  TEXT = 0x8,
+  COMMENT = 0x10,
+  MOUNTED = 0x20,
+  KEYED_CHILDREN = 0x40,
+};
 
+export const enum UniqueVNodeTag {
+  TEXT = '#text',
+  COMPONENT = '#component',
+  COMMENT = '#comment',
+  BLOCK = '#block',
+};
+
+/**
+ * TODO:
+ *  - change vnode attributes. Maybe have set of "Dry" attributes.
+ *  - Recreating Computed values each time is costly.
+ */
+export interface VNodeAttrs {
+  dynamics: Record<string, Computed<any>>,
+  statics: Record<string, Simple>,
+  events?: Record<string, Func1<Event, any>>,
+  classes?: Record<string, Computed<any>>|Computed<any>,
+  styles?: Record<string, Computed<any>>|Computed<any>,
+  key?: string,
+};
 
 export interface VNode {
-  __isVnode: true; // temporary
-  tag: string;
-  key?: string;
-  $el?: Element;
-  flags?: VNodeFlags;
-  data?: VNodeData;
+  id: number;
+  type: string;
+  key?: Simple;
+  component?: Component;
+  block?: Block;
+  instance?: ComponentInstance;
+  context?: Context;
+  text?: string;
+  $el?: Renderable;
+  attrs?: VNodeAttrs;
   children?: Array<VNode>;
-}
-
-export interface TextVNode extends VNode {
-  text: string;
-}
-
-export interface CommentVNode extends VNode {
-  comment: string;
-}
-
-function normalizeChildren(children: VNodeChildren): VNodeChildren {
-  children = normalizedArray(children);
-  const len = children.length;
-  for (let i = 0; i < len; ++i) {
-    if (isString(children[i])) {
-      children[i] = vnode.text(<string>children[i]);
-    } else if (isUndef(children[i])) {
-      children[i] = vnode.comment();
-      continue;
-    } else if (!isVNode(children[i])) {
-      throw new Error(`Not a VNode! (${children[i]})`);
-    }
-  }
-  return children;
-}
-
-export function vnode(tag: string, data?: VNodeData|VNodeChildren, children?: VNodeChildren): VNode {
-  if (isArray(data) || isString(data)) {
-    children = data;
-    data = {};
-  }
-
-  if (isDef(children)) {
-    children = normalizeChildren(children);
-  }
-
-  const key = <string>(data?.key || (<VNodeData>data)?.attrs?.id);
-
-  return _vnode(tag, 0, null, key, null, data, <VNode[]>children);
-}
-
-vnode.text = function(text: Simple): TextVNode {
-  return <TextVNode>_vnode(UniqueVNodeTags.TEXT, VNodeFlags.TEXT, stringWrap(text));
+  flags?: VNodeFlags;
 };
 
-vnode.comment = function(_comment?: string): CommentVNode {
-  return <CommentVNode>_vnode(UniqueVNodeTags.COMMENT, VNodeFlags.COMMENT, _comment);
-};
+export const vnodeComment = (text?: string) => (
+  _vnode(UniqueVNodeTag.COMMENT, null, text, null, VNodeFlags.COMMENT)
+);
 
-export function cloneVNode(node: VNode, flags?: VNodeCloneFlags): VNode {
-  if (isUndef(node)) {
-    return null;
-  } else if (node.tag === UniqueVNodeTags.TEXT) {
-    return vnode.text((<TextVNode>node).text);
-  } else if (node.tag === UniqueVNodeTags.COMMENT) {
-    return vnode.comment();
-  }
+export const vnodeBlock = (block: Block) => (
+  _vnode(UniqueVNodeTag.BLOCK, null, null, null, VNodeFlags.BLOCK, null, null, block)
+);
 
-  const children = arrayWrap(node.children).map(c => cloneVNode(<VNode>c));
-  return _vnode(node.tag, node.flags, null, node.key, null, node.data, children);
-}
+export const vnodeText = (text: string, $el?: Element): VNode => (
+  _vnode(UniqueVNodeTag.TEXT, null, text, null, VNodeFlags.TEXT)
+);
 
-function _vnode(
-  tag: string,
-  flags?: VNodeFlags,
-  text?: string,
-  key?: string,
+export const vnodeComponent = (
+  comp: Component,
+  attrs?: VNodeAttrs,
+  instance?: ComponentInstance,
   $el?: Element,
-  data?: VNodeData,
-  children?: VNode[]
-): VNode {
-  return <any>{ tag, flags, text, key, data, children, $el, __isVnode: true };
-}
+): VNode => (
+  _vnode(UniqueVNodeTag.COMPONENT, attrs, null, null, VNodeFlags.COMPONENT, comp, instance, null, $el)
+);
+
+export const vnode = (
+  type: string,
+  attrs?: VNodeAttrs,
+  children?: Array<VNode>,
+  flags: VNodeFlags = VNodeFlags.NONE,
+  $el?: Element,
+): VNode => ( // type may need to be converted to lower case.
+  _vnode(type, attrs, null, children, flags, null, null, null, $el)
+);
+
+
+/**
+ * Internal VNode factory.
+ * One access point  =>  Same (repeatible) shape  =>  Better performance
+ */
+const _vnode = (
+  type: string,
+  attrs?: VNodeAttrs,
+  text?: string,
+  children?: Array<VNode>,
+  flags?: VNodeFlags,
+  component?: Component,
+  instance?: ComponentInstance,
+  block?: Block,
+  $el?: Renderable,
+): VNode => {
+
+  if (<any>flags instanceof Element) {
+    console.trace();
+    console.log('HERERERERE');
+  }
+
+  return ({
+  id: uuid(),
+  type,
+  $el,
+  attrs,
+  key: attrs?.key,
+  text,
+  block,
+  children,
+  flags,
+  component,
+  instance,
+})
+};

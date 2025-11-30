@@ -2,61 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lux3</title>
+  <title>Lux (v2)</title>
 </head>
 <body>
-  <div>
-    <button id="PauseBtn">Play</button>
-    <span>
-      <label for="cbA">A</label>
-      <input type="checkbox" id="cbA" />
-    </span>&nbsp;
-    <span>
-      <label for="cbB">B</label>
-      <input type="checkbox" id="cbB" />
-    </span>&nbsp;
-    <span>
-      <label for="cbC">C</label>
-      <input type="checkbox" id="cbC" />
-    </span>&nbsp;
-    <span>
-      <label for="inpString">String</label>
-      <input type="text" id="inpString" />
-    </span>
-  </div>
-  <div id="App">
-    <div id="Blue" style="width:200px;height: 50px;background-color: lightblue;">
-      <span if="c">IF="c"</span>
-      <span if="a">IF!</span>
-      <span elif="b">ELSE IF!</span>
-      <span else>ELSE!</span>
-      <div if="a === b">a equals b</div>
-      <div else>a does not equal b</div>
-    </div>
-    <div style="width:200px;height: 50px;background-color: red;">
-      <span loop="i in list" style="margin:5px;width:10px;height:10px;background-color:lightcoral;">
-        {{ i == 4 ? 'four' : i }}
-      </span>
-    </div>
-    <div style="width:200px;height: 50px;background-color: yellow;">
-      <span>{{ str === "My String" }}</span>
-      <Comp :txt="str" />
-    </div>
-    <div style="width:200px;height: 50px;background-color: green;" :test="str">
-        <Comp loop="i in list" :txt="i" />
-    </div>
+  <div id="test">
+    TEST
   </div>
 
-  <template id="Comp1">
-    <span style="width: 10px;height:10px;background-color: purple">{{ txt }}</span>
+  <div id="placeApp">
+  </div>
+
+  <template id="app">
+    <div>
+      <div style="width:200px;height: 50px;background-color: red;">
+      TEXT
+      </div>
+      {{ mystring }}
+      <br />
+      <button @click="hello($event.target)">BUTTON!</button>
+
+      <TestComponent :subtext="mystring"><!-- Need to use proper closing tags. --></TestComponent>
+      {{ c }}
+      <div :style="`width:${c * 50}px;height: 50px;background-color: blue;`">
+        {{ ((c + 1) * 20).toString(16) }}
+      </div>
+      <div #if="c === 0" style="width:200px;height: 50px;background-color: yellow;">
+        IF (c === 0)
+      </div>
+      <div #else #if="c === 1" style="width:200px;height: 50px;background-color: green;">
+        ELIF (c === 1)
+      </div>
+      <!-- COMMENT -->
+      <div #else #loop="item of list" style="min-width: 200px; max-width:240px;padding: 5px;background-color: purple;">
+        {{ item }}
+        <TestComponent :subtext="item.toUpperCase()"></TestComponent>
+      </div>
+    </div>
   </template>
 
-  <!-- Engine Scripts -->
-  <script type="module" src="./src/lux.ts"></script>
+  <template id="test_component">
+    <div style="width: 250px; height: 60px; background-color: deepskyblue;">
+      <p>This is a component:</p>
+      <p>{{ subtext }}</p>
+    </div>
+  </template>
 
-  <!-- Test Scripts -->
-  <script src="./main.js"></script>
+  <script type="module" src="./src/main.ts"></script>
 </body>
 </html>

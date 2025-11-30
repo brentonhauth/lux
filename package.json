@@ -1,19 +1,5 @@
 {
-  "name": "lux",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview"
-  },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "ts-loader": "^9.2.6",
-    "typescript": "^4.4.4",
-    "vite": "^2.6.7"
+    "vite": "^6.0.11"
   }
 }
